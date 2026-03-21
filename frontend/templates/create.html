@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Item – Auto Data Collector</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <nav class="navbar">
+    <a href="{{ url_for('index') }}" class="brand">Auto Data Collector</a>
+    <a href="{{ url_for('index') }}" class="btn">← Back</a>
+  </nav>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <h1>Add New Item</h1>
+
+    <form method="POST" action="{{ url_for('create') }}" class="form">
+      <label for="name">Name <span class="required">*</span></label>
+      <input type="text" id="name" name="name" required placeholder="e.g. Temperature" />
+
+      <label for="source">Source <span class="required">*</span></label>
+      <input type="text" id="source" name="source" required placeholder="e.g. Sensor A" />
+
+      <label for="value">Value</label>
+      <input type="text" id="value" name="value" placeholder="e.g. 23.5" />
+
+      <button type="submit" class="btn">Save</button>
+    </form>
+  </main>
+</body>
+</html>
