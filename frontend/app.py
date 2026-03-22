@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")
@@ -41,6 +41,10 @@ def create():
         return redirect(url_for("index"))
     return render_template("create.html")
 
+@app.route("/test", methods=["GET", "POST"])
+def test():
+    return render_template("test.html")
+
 
 @app.route("/delete/<int:item_id>", methods=["POST"])
 def delete(item_id: int):
@@ -51,6 +55,35 @@ def delete(item_id: int):
     except requests.RequestException as e:
         flash(f"Failed to delete item: {e}", "danger")
     return redirect(url_for("index"))
+
+
+@app.route("/api/test/token", methods=["POST"])
+def token_auto_test():
+    try:
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(_api("/api/test/token"), timeout=60)
+        # Relay the backend response as-is (including error details from FastAPI)
+        return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({"success": False, "error": "Cannot connect to backend at http://localhost:8000. Is uvicorn running?"}), 502
+    except requests.exceptions.Timeout:
+        return jsonify({"success": False, "error": "Backend request timed out (>60 s). Chrome may still be starting up — please try again."}), 504
+    except requests.RequestException as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/test/update", methods=["POST"])
+def api_update_test():
+    try:
+        resp = requests.post(_api("/api/test/update"), timeout=10)
+        # Relay the backend response as-is (including error details from FastAPI)
+        return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({"success": False, "error": "Cannot connect to backend at http://localhost:8000. Is uvicorn running?"}), 502
+    except requests.exceptions.Timeout:
+        return jsonify({"success": False, "error": "Backend request timed out."}), 504
+    except requests.RequestException as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":

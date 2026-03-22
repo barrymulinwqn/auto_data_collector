@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.routers import data
+from backend.routers import data, test
 
 app = FastAPI(
     title="Auto Data Collector API",
@@ -18,6 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
+app.include_router(test.router, prefix="/api/test", tags=["test"])
 
 
 @app.get("/health")

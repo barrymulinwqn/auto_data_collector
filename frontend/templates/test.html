@@ -8,11 +8,8 @@
 </head>
 <body>
   <nav class="navbar">
-    <div style="display:flex;align-items:center;gap:1rem;">
-      <span class="brand">Auto Data Collector</span>
-      <a href="{{ url_for('test') }}" class="btn">Test Separate Function</a>
-    </div>
-    <a href="{{ url_for('create') }}" class="btn">+ New Item</a>
+    <span class="brand">Auto Data Collector</span>
+    <a href="{{ url_for('index') }}" class="btn">← Back</a>
   </nav>
 
   <main class="container">
@@ -22,17 +19,22 @@
       {% endfor %}
     {% endwith %}
 
-    <!-- <section class="group-section">
+    <section class="group-section">
       <h2>Function Tests</h2>
       <div class="group-actions">
         <div class="btn-with-result">
-          <button type="button" class="btn btn-secondary" id="btn-token-auto-test">Token Auto Test</button>
-          <span id="token-auto-test-result" class="test-result"></span>
+          <button type="button" class="btn btn-secondary" id="btn-token-auto-retrieve">Token Auto Retrieve</button>
+          <span id="token-auto-retrieve-result" class="test-result"></span>
         </div>
 
-        <button type="button" class="btn btn-secondary" id="btn-api-update-test">API Update Test</button>
+        <button type="button" class="btn btn-secondary" id="btn-api-update-test">Token Auto Refresh</button>
+
+        <button type="button" class="btn btn-secondary" id="btn-api-update-test">Task List API Retrieve</button>
+        <button type="button" class="btn btn-secondary" id="btn-api-update-test">Update API Test</button>
+        <button type="button" class="btn btn-secondary" id="btn-api-update-test">Uploading API Test</button>
+
       </div>
-    </section> -->
+    </section>
 
     <h1>Collected Data</h1>
 
