@@ -31,6 +31,8 @@ TARGET_URL          = "https://101-next.orbitfin.ai"  # site to open / find
 TARGET_URL_CONTAINS = "101-next.orbitfin.ai"           # substring to match the tab
 TOKEN_STORAGE_KEY   = "jwt_token"                      # localStorage key holding the JWT
 TASK_LIST_API_URL   = "https://101-next.orbitfin.ai/prod/security/task/list"  # task list endpoint
+ASSIGN_TASK_API_URL = "https://101-next.orbitfin.ai/prod/security/task/assign"  # assign task endpoint
+ABANDON_TASK_API_URL = "https://101-next.orbitfin.ai/prod/security/task/abandon"  # abandon task endpoint
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── Chrome launch helpers ──────────────────────────────────────────────────────
@@ -355,6 +357,120 @@ def task_list(
         raise HTTPException(status_code=502, detail=f"Cannot connect to task list API: {exc}")
     except _requests.exceptions.Timeout:
         raise HTTPException(status_code=504, detail="Task list API request timed out.")
+    except _requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    try:
+        data = resp.json()
+    except Exception:
+        content_type = resp.headers.get("Content-Type", "")
+        if "text/html" in content_type:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"TASK_LIST_API_URL ({TASK_LIST_API_URL}) returned HTML instead of JSON. "
+                    "The URL is likely wrong — check the actual API endpoint in Chrome DevTools Network tab."
+                ),
+            )
+        data = {"raw": resp.text}
+
+    return {
+        "success": resp.ok,
+        "status_code": resp.status_code,
+        "data": data,
+    }
+
+# API Assign Task Testing
+class AssignTaskRequest(BaseModel):
+    task_id: int = 1927
+
+@router.post("/assign-task")
+def assign_task(
+    body: AssignTaskRequest,
+    authorization: Optional[str] = Header(default=None),
+):
+    """
+    Assign a task using the supplied JWT token.
+    The Authorization header must be in the format: JWT <token>
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization header is required (format: JWT <token>)",
+        )
+
+    headers = {
+        "Authorization": authorization,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    params = {
+        "task_id": body.task_id,
+    }
+
+    try:
+        resp = _requests.post(ASSIGN_TASK_API_URL, headers=headers, json=params, timeout=30)
+    except _requests.exceptions.ConnectionError as exc:
+        raise HTTPException(status_code=502, detail=f"Cannot connect to assign task API: {exc}")
+    except _requests.exceptions.Timeout:
+        raise HTTPException(status_code=504, detail="Assign task API request timed out.")
+    except _requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    try:
+        data = resp.json()
+    except Exception:
+        content_type = resp.headers.get("Content-Type", "")
+        if "text/html" in content_type:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"TASK_LIST_API_URL ({TASK_LIST_API_URL}) returned HTML instead of JSON. "
+                    "The URL is likely wrong — check the actual API endpoint in Chrome DevTools Network tab."
+                ),
+            )
+        data = {"raw": resp.text}
+
+    return {
+        "success": resp.ok,
+        "status_code": resp.status_code,
+        "data": data,
+    }
+    
+# API Abandon Task Testing
+class AbandonTaskRequest(BaseModel):
+    task_id: int = 1927
+
+@router.post("/abandon-task")
+def abandon_task(
+    body: AbandonTaskRequest,
+    authorization: Optional[str] = Header(default=None),
+):
+    """
+    Abandon a task using the supplied JWT token.
+    The Authorization header must be in the format: JWT <token>
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization header is required (format: JWT <token>)",
+        )
+
+    headers = {
+        "Authorization": authorization,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    params = {
+        "task_id": body.task_id,
+    }
+
+    try:
+        resp = _requests.post(ABANDON_TASK_API_URL, headers=headers, json=params, timeout=30)
+    except _requests.exceptions.ConnectionError as exc:
+        raise HTTPException(status_code=502, detail=f"Cannot connect to abandon task API: {exc}")
+    except _requests.exceptions.Timeout:
+        raise HTTPException(status_code=504, detail="Abandon task API request timed out.")
     except _requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 

@@ -98,6 +98,59 @@ def api_task_list_test():
         return jsonify({"success": False, "error": str(e)}), 500
     
 
+# api assign task testing
+@app.route("/api/test/assign-task", methods=["POST"])
+def api_assign_task_test():
+    try:
+        auth_header = request.headers.get("Authorization", "")
+        body = request.get_json(silent=True) or {}
+        headers = {}
+        if auth_header:
+            headers["Authorization"] = auth_header
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(
+            _api("/api/test/assign-task"),
+            json=body,
+            headers=headers,
+            timeout=60,
+        )
+        # Relay the backend response as-is (including error details from FastAPI)
+        return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({"success": False, "error": "Cannot connect to backend at http://localhost:8000. Is uvicorn running?"}), 502
+    except requests.exceptions.Timeout:
+        return jsonify({"success": False, "error": "Backend request timed out (>60 s). Chrome may still be starting up — please try again."}), 504
+    except requests.RequestException as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+
+# api abandon task testing
+@app.route("/api/test/abandon-task", methods=["POST"])
+def api_abandon_task_test():
+    try:
+        auth_header = request.headers.get("Authorization", "")
+        body = request.get_json(silent=True) or {}
+        headers = {}
+        if auth_header:
+            headers["Authorization"] = auth_header
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(
+            _api("/api/test/abandon-task"),
+            json=body,
+            headers=headers,
+            timeout=60,
+        )
+        # Relay the backend response as-is (including error details from FastAPI)
+        return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({"success": False, "error": "Cannot connect to backend at http://localhost:8000. Is uvicorn running?"}), 502
+    except requests.exceptions.Timeout:
+        return jsonify({"success": False, "error": "Backend request timed out (>60 s). Chrome may still be starting up — please try again."}), 504
+    except requests.RequestException as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+    
+    
 @app.route("/api/test/update", methods=["POST"])
 def api_update_test():
     try:

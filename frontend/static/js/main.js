@@ -74,6 +74,72 @@ if (apiTaskListTestBtn) {
   });
 }
 
+// API Assign Task Test
+const apiAssignTaskBtn = document.getElementById('btn-api-assign-task');
+const apiAssignTaskResult = document.getElementById('api-assign-task-result');
+if (apiAssignTaskBtn) {
+  apiAssignTaskBtn.addEventListener('click', async () => {
+    apiAssignTaskBtn.disabled = true;
+    apiAssignTaskBtn.textContent = 'Running…';
+    apiAssignTaskResult.textContent = '';
+    apiAssignTaskResult.className = 'test-result';
+    try {
+      const res = await fetch('/api/test/assign-task', {
+        method: 'POST',
+        headers: {
+          'Authorization': `JWT ${jwtToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({task_id: 1927}),
+      });
+
+      const data = await res.json();
+
+      apiAssignTaskResult.textContent = JSON.stringify(data, null, 2);
+      apiAssignTaskResult.classList.add(res.ok && data.success ? 'test-result--success' : 'test-result--error');
+    } catch (err) {
+      apiAssignTaskResult.textContent = 'Error: ' + err.message;
+      apiAssignTaskResult.classList.add('test-result--error');
+    } finally {
+      apiAssignTaskBtn.disabled = false;
+      apiAssignTaskBtn.textContent = 'API Assign Task Test';
+    }
+  });
+}
+
+// API Abandon Task Test
+const apiAbandonTaskBtn = document.getElementById('btn-api-abandon-task');
+const apiAbandonTaskResult = document.getElementById('api-abandon-task-result');
+if (apiAbandonTaskBtn) {
+  apiAbandonTaskBtn.addEventListener('click', async () => {
+    apiAbandonTaskBtn.disabled = true;
+    apiAbandonTaskBtn.textContent = 'Running…';
+    apiAbandonTaskResult.textContent = '';
+    apiAbandonTaskResult.className = 'test-result';
+    try {
+      const res = await fetch('/api/test/abandon-task', {
+        method: 'POST',
+        headers: {
+          'Authorization': `JWT ${jwtToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({task_id: 1927}),
+      });
+
+      const data = await res.json();
+
+      apiAbandonTaskResult.textContent = JSON.stringify(data, null, 2);
+      apiAbandonTaskResult.classList.add(res.ok && data.success ? 'test-result--success' : 'test-result--error');
+    } catch (err) {
+      apiAbandonTaskResult.textContent = 'Error: ' + err.message;
+      apiAbandonTaskResult.classList.add('test-result--error');
+    } finally {
+      apiAbandonTaskBtn.disabled = false;
+      apiAbandonTaskBtn.textContent = 'API Abandon Task Test';
+    }
+  });
+}
+
 // API Update Test
 const apiUpdateTestBtn = document.getElementById('btn-api-update-test');
 if (apiUpdateTestBtn) {
