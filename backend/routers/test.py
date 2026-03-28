@@ -16,10 +16,12 @@ import platform
 import shutil
 import subprocess
 import time
+from typing import Optional
 
 import requests as _requests
 import websockets
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -28,6 +30,7 @@ CDP_HTTP            = "http://localhost:9222"          # Chrome DevTools HTTP en
 TARGET_URL          = "https://101-next.orbitfin.ai"  # site to open / find
 TARGET_URL_CONTAINS = "101-next.orbitfin.ai"           # substring to match the tab
 TOKEN_STORAGE_KEY   = "jwt_token"                      # localStorage key holding the JWT
+TASK_LIST_API_URL   = "https://101-next.orbitfin.ai/prod/security/task/list"  # task list endpoint
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── Chrome launch helpers ──────────────────────────────────────────────────────
@@ -309,4 +312,68 @@ async def token_auto_test():
         "tab_url": target["url"],
         "storage_key": TOKEN_STORAGE_KEY,
         "token": token_value,
+    }
+
+
+# ── Task List endpoint ─────────────────────────────────────────────────────────
+
+class TaskListRequest(BaseModel):
+    page: int = 1
+    page_size: int = 12
+    view_type: str = "available"
+
+
+@router.post("/task-list")
+def task_list(
+    body: TaskListRequest,
+    authorization: Optional[str] = Header(default=None),
+):
+    """
+    Fetch the task list from the target API using the supplied JWT token.
+    The Authorization header must be in the format: JWT <token>
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization header is required (format: JWT <token>)",
+        )
+
+    headers = {
+        "Authorization": authorization,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    params = {
+        "page": body.page,
+        "page_size": body.page_size,
+        "view_type": body.view_type,
+    }
+
+    try:
+        resp = _requests.post(TASK_LIST_API_URL, headers=headers, json=params, timeout=30)
+    except _requests.exceptions.ConnectionError as exc:
+        raise HTTPException(status_code=502, detail=f"Cannot connect to task list API: {exc}")
+    except _requests.exceptions.Timeout:
+        raise HTTPException(status_code=504, detail="Task list API request timed out.")
+    except _requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    try:
+        data = resp.json()
+    except Exception:
+        content_type = resp.headers.get("Content-Type", "")
+        if "text/html" in content_type:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"TASK_LIST_API_URL ({TASK_LIST_API_URL}) returned HTML instead of JSON. "
+                    "The URL is likely wrong — check the actual API endpoint in Chrome DevTools Network tab."
+                ),
+            )
+        data = {"raw": resp.text}
+
+    return {
+        "success": resp.ok,
+        "status_code": resp.status_code,
+        "data": data,
     }
