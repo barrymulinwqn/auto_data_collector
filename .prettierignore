@@ -1,0 +1,12 @@
+# Dependencies & build artifacts
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Static assets that shouldn't be reformatted
+frontend/static/
+
+# Data files
+*.json
+*.csv

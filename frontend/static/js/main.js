@@ -1,5 +1,46 @@
 let jwtToken = '';
 
+// Fetch token on page load
+async function autoRetrieveToken() {
+  try {
+    const res = await fetch('/api/test/token', { method: 'POST' });
+    const data = await res.json();
+    const display = data.detail ?? data;
+    jwtToken = display.token ? display.token.replace(/"/g, '') : '';
+    console.log('[Page Load] JWT Token retrieved:', jwtToken);
+  } catch (err) {
+    console.error('[Page Load] Token retrieval failed:', err.message);
+  }
+}
+
+// validate if token expires or not
+async function validateToken() {
+  try {
+    const res = await fetch('/api/test/validate-token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `JWT ${jwtToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await res.json();
+    console.log('[Token Validation] Response:', data);
+    if (res.ok && data.valid) {
+      console.log('[Token Validation] Token is valid.');
+    } else {
+      console.warn('[Token Validation] Token is invalid or expired. Please retrieve a new token.');
+    }
+  } catch (err) {
+    console.error('[Token Validation] Failed to validate token:', err.message);
+  }
+}
+
+autoRetrieveToken();
+
+
+
+//////////////////////////////// html elements and event listeners for testing API endpoints //////////////////
+
 
 // Token Auto Retrieve
 const tokenAutoRetrieveBtn = document.getElementById('btn-token-auto-retrieve');

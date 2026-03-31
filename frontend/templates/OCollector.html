@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto Data Collector</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <span class="brand">Auto Data Collector</span>
+    </div>
+  </nav>
+
+  <main class="container">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for group in items|groupby('category') %}
+                <!-- Top-level grouping row -->
+                <tr class="table-secondary">
+                    <td colspan="3"><strong>Category: {{ group.grouper }}</strong></td>
+                </tr>
+                <!-- Individual items within the group -->
+                {% for item in group.list %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>${{ item.price }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+                
+    </table>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/refreshJWTToken.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

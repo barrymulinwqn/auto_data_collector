@@ -1,0 +1,157 @@
+{
+    "code": 20000,
+    "message": "查询成功",
+    "data": {
+        "id": 1969,
+        "task_key": "review_1965_1774950413",
+        "task_name": "【审核失败-重新收集】260323-丛丹琪 - 审核",
+        "task_description": "【审核失败 - 需要重新收集】\n\n原任务：260323-丛丹琪\n\n审核失败公司数量：2 家\n\n审核失败详情：\n- 1-5045125224: <p>官网无半年报，备注后重新收集即可</p>\n- 1-4295880504: <p>重新上传全部目标报告</p><p><img src=\"https://ot-cdn.s3.us-west-2.amazonaws.com/shared-notes-images/1774941080405_1774941080404_a3chw9.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAZ2SDT5DU6ZK7AEZU%2F20260331%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260331T071126Z&X-Amz-Expires=604800&X-Amz-Signature=a69ee14c1a4f9c33902d767e6092310b7146086547f6f910b427f8a856d8231d&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject\" alt=\"1774941080404_a3chw9.png\" data-href=\"https://ot-cdn.s3.us-west-2.amazonaws.com/shared-notes-images/1774941080405_1774941080404_a3chw9.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAZ2SDT5DU6ZK7AEZU%2F20260331%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260331T071126Z&X-Amz-Expires=604800&X-Amz-Signature=a69ee14c1a4f9c33902d767e6092310b7146086547f6f910b427f8a856d8231d&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject\" width=\"\" height=\"\" style=\"\"/></p>\n\n请根据审核失败原因重新收集报告。每个公司的详细失败原因已记录在 Task Notes 中，请查看后针对性收集。\n\n---\n原任务描述：\n无\n",
+        "task_group": "实习生Training",
+        "task_group_key": "8937d1de-83c0-4d9e-a281-2fdf18c9ec7a",
+        "task_group_id": 22,
+        "company_group_key": "task_base_group",
+        "companies": [
+            {
+                "notes": "<p><span style=\"color: rgb(245, 108, 108);\"><strong>Warning: 审核失败原因：</strong></span></p><p><br></p><p>官网无半年报，备注后重新收集即可</p><p><br></p><p><strong>请根据以上原因重新收集报告</strong></p><p>官网无半年报</p>",
+                "status": "collection_completed",
+                "round_id": 26319,
+                "logo_path": "https://ot-cdn.s3.us-west-2.amazonaws.com/company-logos/v1/b5a4b1e3430b41aeb45d044593b53ad9.png",
+                "started_at": "2026-03-31 07:47:51",
+                "entity_name": "GYM GROUP PLC",
+                "completed_at": "2026-03-31 07:48:16",
+                "current_step": "collection_completed",
+                "round_number": 1,
+                "rounds_history": [],
+                "missing_reports": [],
+                "orbit_entity_id": "1-5045125224",
+                "review_rejection_reason": "<p>官网无半年报，备注后重新收集即可</p>",
+                "website": [
+                    "https://www.tggplc.com"
+                ],
+                "website_pages": [
+                    "https://www.tggplc.com/investors/shareholder-information/agm/",
+                    "https://www.tggplc.com/investors/results-reports-and-presentations/",
+                    "https://www.tggplc.com/sustainability/disclosures-and-reports/"
+                ],
+                "shared_notes": "",
+                "source_pages": [
+                    {
+                        "id": 14542,
+                        "page_url": "https://www.tggplc.com/investors/shareholder-information/agm/",
+                        "page_type": "REPORT",
+                        "comment": "AGM",
+                        "created_at": "2026-03-21 09:00:13",
+                        "updated_at": "2026-03-21 09:00:13"
+                    },
+                    {
+                        "id": 12582,
+                        "page_url": "https://www.tggplc.com/investors/financial-calendar/",
+                        "page_type": "CALENDAR",
+                        "comment": "",
+                        "created_at": "2026-01-20 01:52:20",
+                        "updated_at": "2026-03-25 15:13:54"
+                    },
+                    {
+                        "id": 12581,
+                        "page_url": "https://www.tggplc.com/investors/results-reports-and-presentations/",
+                        "page_type": "REPORT",
+                        "comment": "年报",
+                        "created_at": "2026-01-20 01:52:14",
+                        "updated_at": "2026-01-20 01:52:14"
+                    },
+                    {
+                        "id": 12580,
+                        "page_url": "https://www.tggplc.com/sustainability/disclosures-and-reports/",
+                        "page_type": "REPORT",
+                        "comment": "ESG",
+                        "created_at": "2026-01-20 01:52:06",
+                        "updated_at": "2026-01-20 01:52:06"
+                    }
+                ],
+                "name": "GYM GROUP PLC"
+            },
+            {
+                "notes": "<p><strong style='color: #f56c6c;'>Warning: 审核失败原因：</strong></p><p><p>重新上传全部目标报告</p><p><img src=\"https://ot-cdn.s3.us-west-2.amazonaws.com/shared-notes-images/1774941080405_1774941080404_a3chw9.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAZ2SDT5DU6ZK7AEZU%2F20260331%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260331T071126Z&X-Amz-Expires=604800&X-Amz-Signature=a69ee14c1a4f9c33902d767e6092310b7146086547f6f910b427f8a856d8231d&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject\" alt=\"1774941080404_a3chw9.png\" data-href=\"https://ot-cdn.s3.us-west-2.amazonaws.com/shared-notes-images/1774941080405_1774941080404_a3chw9.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAZ2SDT5DU6ZK7AEZU%2F20260331%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260331T071126Z&X-Amz-Expires=604800&X-Amz-Signature=a69ee14c1a4f9c33902d767e6092310b7146086547f6f910b427f8a856d8231d&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject\" width=\"\" height=\"\" style=\"\"/></p></p><p><strong>请根据以上原因重新收集报告</strong></p>",
+                "status": "collection_completed",
+                "round_id": 26322,
+                "logo_path": "https://ot-cdn.s3.us-west-2.amazonaws.com/company-logos/v1/0f1cea7162144a6fa187f6a7fd1c766c.png",
+                "started_at": "2026-03-31 07:55:34",
+                "entity_name": "CHUBU ELECTRIC POWER CO INC",
+                "completed_at": "2026-03-31 09:46:46",
+                "current_step": "collection_completed",
+                "round_number": 1,
+                "rounds_history": [],
+                "missing_reports": [],
+                "orbit_entity_id": "1-4295880504",
+                "review_rejection_reason": "<p>重新上传全部目标报告</p><p><img src=\"https://ot-cdn.s3.us-west-2.amazonaws.com/shared-notes-images/1774941080405_1774941080404_a3chw9.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAZ2SDT5DU6ZK7AEZU%2F20260331%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260331T071126Z&X-Amz-Expires=604800&X-Amz-Signature=a69ee14c1a4f9c33902d767e6092310b7146086547f6f910b427f8a856d8231d&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject\" alt=\"1774941080404_a3chw9.png\" data-href=\"https://ot-cdn.s3.us-west-2.amazonaws.com/shared-notes-images/1774941080405_1774941080404_a3chw9.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAZ2SDT5DU6ZK7AEZU%2F20260331%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260331T071126Z&X-Amz-Expires=604800&X-Amz-Signature=a69ee14c1a4f9c33902d767e6092310b7146086547f6f910b427f8a856d8231d&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject\" width=\"\" height=\"\" style=\"\"/></p>",
+                "website": [
+                    "https://www.chuden.co.jp"
+                ],
+                "website_pages": [
+                    "https://www.chuden.co.jp/ir/ir_siryo/kessan/"
+                ],
+                "shared_notes": "",
+                "source_pages": [
+                    {
+                        "id": 14181,
+                        "page_url": "https://www.chuden.co.jp/ir/ir_calendar/",
+                        "page_type": "CALENDAR",
+                        "comment": "日历",
+                        "created_at": "2026-03-19 06:10:00",
+                        "updated_at": "2026-03-26 06:18:42"
+                    },
+                    {
+                        "id": 14180,
+                        "page_url": "https://www.chuden.co.jp/ir/ir_siryo/kessan/",
+                        "page_type": "REPORT",
+                        "comment": "決算関連資料",
+                        "created_at": "2026-03-19 06:09:58",
+                        "updated_at": "2026-03-19 06:09:58"
+                    }
+                ],
+                "name": "CHUBU ELECTRIC POWER CO INC"
+            }
+        ],
+        "status": "published",
+        "priority": "high",
+        "deadline": "2026-04-07 07:11:56",
+        "created_by": "丛丹琪",
+        "created_by_id": 25,
+        "assigned_to": null,
+        "assigned_to_id": null,
+        "assigned_at": null,
+        "completed_at": null,
+        "cancelled_at": null,
+        "created_at": "2026-03-31 09:46:53",
+        "updated_at": "2026-03-31 09:46:53",
+        "total_companies": 2,
+        "completed_companies": 0,
+        "status_history": [
+            {
+                "action": "auto_create",
+                "remarks": "收集任务手动完成后自动创建审核任务",
+                "operator": "丛丹琪",
+                "timestamp": "2026-03-31 09:46:53",
+                "to_status": "published",
+                "from_status": null,
+                "operator_id": 25
+            }
+        ],
+        "remarks": null,
+        "task_type": "review",
+        "source_task_id": 1965,
+        "recollect_task_id": null,
+        "source_task_key": "recollect_1813_1774941116",
+        "collect_by": "丛丹琪",
+        "progress": 0.0,
+        "requirements": [],
+        "requirements_by_company": {},
+        "report_stats": {
+            "collected_reports": 0,
+            "companies_with_reports": 0,
+            "reports_by_company": {}
+        }
+    },
+    "detail": {},
+    "count": 0
+}
