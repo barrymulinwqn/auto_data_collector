@@ -98,6 +98,44 @@ def token_auto_test():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+# api token validation testing
+@app.route("/api/test/validate-token", methods=["POST"])
+def token_validate_test():
+    try:
+        auth_header = request.headers.get("Authorization", "")
+        headers = {}
+        if auth_header:
+            headers["Authorization"] = auth_header
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(
+            _api("/api/test/validate-token"), headers=headers, timeout=60
+        )
+        # Relay the backend response as-is (including error details from FastAPI)
+        return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.ConnectionError:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Cannot connect to backend at http://localhost:8000. Is uvicorn running?",
+                }
+            ),
+            502,
+        )
+    except requests.exceptions.Timeout:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Backend request timed out (>60 s). Chrome may still be starting up — please try again.",
+                }
+            ),
+            504,
+        )
+    except requests.RequestException as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # api task list testing
 @app.route("/api/test/task-list", methods=["POST"])
 def api_task_list_test():

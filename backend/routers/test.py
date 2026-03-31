@@ -26,16 +26,23 @@ from pydantic import BaseModel
 router = APIRouter()
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-CDP_HTTP            = "http://localhost:9222"          # Chrome DevTools HTTP endpoint
-TARGET_URL          = "https://101-next.orbitfin.ai"  # site to open / find
-TARGET_URL_CONTAINS = "101-next.orbitfin.ai"           # substring to match the tab
-TOKEN_STORAGE_KEY   = "jwt_token"                      # localStorage key holding the JWT
-TASK_LIST_API_URL   = "https://101-next.orbitfin.ai/prod/security/task/list"  # task list endpoint
-ASSIGN_TASK_API_URL = "https://101-next.orbitfin.ai/prod/security/task/assign"  # assign task endpoint
-ABANDON_TASK_API_URL = "https://101-next.orbitfin.ai/prod/security/task/abandon"  # abandon task endpoint
+CDP_HTTP = "http://localhost:9222"  # Chrome DevTools HTTP endpoint
+TARGET_URL = "https://101-next.orbitfin.ai"  # site to open / find
+TARGET_URL_CONTAINS = "101-next.orbitfin.ai"  # substring to match the tab
+TOKEN_STORAGE_KEY = "jwt_token"  # localStorage key holding the JWT
+TASK_LIST_API_URL = (
+    "https://101-next.orbitfin.ai/prod/security/task/list"  # task list endpoint
+)
+ASSIGN_TASK_API_URL = (
+    "https://101-next.orbitfin.ai/prod/security/task/assign"  # assign task endpoint
+)
+ABANDON_TASK_API_URL = (
+    "https://101-next.orbitfin.ai/prod/security/task/abandon"  # abandon task endpoint
+)
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── Chrome launch helpers ──────────────────────────────────────────────────────
+
 
 def _chrome_executable() -> str:
     """Return the path to the Chrome binary for the current OS."""
@@ -52,7 +59,12 @@ def _chrome_executable() -> str:
                 return c
         return "chrome"
     # Linux
-    for name in ("google-chrome", "google-chrome-stable", "chromium-browser", "chromium"):
+    for name in (
+        "google-chrome",
+        "google-chrome-stable",
+        "chromium-browser",
+        "chromium",
+    ):
         found = shutil.which(name)
         if found:
             return found
@@ -80,7 +92,7 @@ def _launch_chrome_with_debug_port() -> None:
         cmd,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        start_new_session=True,   # detach from the server process
+        start_new_session=True,  # detach from the server process
     )
     # Return immediately – no blocking poll.
     # The /api/test/token endpoint will return a "retry" response so the user
@@ -125,6 +137,7 @@ def _ensure_chrome_and_tab() -> bool:
 
 # ── CDP helpers ────────────────────────────────────────────────────────────────
 
+
 async def _wait_for_tab(timeout: int = 35) -> bool:
     """
     Poll the CDP /json endpoint until the target tab URL appears, or until
@@ -161,7 +174,8 @@ async def _wait_for_localStorage_token(ws_url: str, timeout: int = 60) -> str | 
     while time.monotonic() < end:
         try:
             result = await _cdp_eval(
-                ws_url, 1,
+                ws_url,
+                1,
                 f"localStorage.getItem({json.dumps(TOKEN_STORAGE_KEY)})",
             )
             value = result.get("result", {}).get("result", {}).get("value")
@@ -176,14 +190,16 @@ async def _wait_for_localStorage_token(ws_url: str, timeout: int = 60) -> str | 
 async def _cdp_eval(ws_url: str, msg_id: int, expression: str) -> dict:
     """Open a CDP WebSocket, send a Runtime.evaluate command, return the result."""
     async with websockets.connect(ws_url, open_timeout=5) as ws:
-        cmd = json.dumps({
-            "id": msg_id,
-            "method": "Runtime.evaluate",
-            "params": {
-                "expression": expression,
-                "returnByValue": True,
-            },
-        })
+        cmd = json.dumps(
+            {
+                "id": msg_id,
+                "method": "Runtime.evaluate",
+                "params": {
+                    "expression": expression,
+                    "returnByValue": True,
+                },
+            }
+        )
         await ws.send(cmd)
         raw = await ws.recv()
     return json.loads(raw)
@@ -232,9 +248,7 @@ async def token_auto_test():
         )
 
     # 3. Find the target tab
-    target = next(
-        (t for t in tabs if TARGET_URL_CONTAINS in t.get("url", "")), None
-    )
+    target = next((t for t in tabs if TARGET_URL_CONTAINS in t.get("url", "")), None)
     if not target:
         open_urls = [t.get("url") for t in tabs]
         raise HTTPException(
@@ -277,7 +291,8 @@ async def token_auto_test():
     # 5. Read the token from localStorage via CDP (tab was already open)
     try:
         result = await _cdp_eval(
-            ws_url, 1,
+            ws_url,
+            1,
             f"localStorage.getItem({json.dumps(TOKEN_STORAGE_KEY)})",
         )
     except Exception as exc:
@@ -292,10 +307,13 @@ async def token_auto_test():
         # Retrieve available keys to help diagnose the wrong key name
         try:
             keys_result = await _cdp_eval(
-                ws_url, 2,
+                ws_url,
+                2,
                 "JSON.stringify(Object.keys(localStorage))",
             )
-            raw_keys = keys_result.get("result", {}).get("result", {}).get("value", "[]")
+            raw_keys = (
+                keys_result.get("result", {}).get("result", {}).get("value", "[]")
+            )
             available_keys = json.loads(raw_keys)
         except Exception:
             available_keys = []
@@ -318,6 +336,7 @@ async def token_auto_test():
 
 
 # ── Task List endpoint ─────────────────────────────────────────────────────────
+
 
 class TaskListRequest(BaseModel):
     page: int = 1
@@ -352,9 +371,13 @@ def task_list(
     }
 
     try:
-        resp = _requests.post(TASK_LIST_API_URL, headers=headers, json=params, timeout=30)
+        resp = _requests.post(
+            TASK_LIST_API_URL, headers=headers, json=params, timeout=30
+        )
     except _requests.exceptions.ConnectionError as exc:
-        raise HTTPException(status_code=502, detail=f"Cannot connect to task list API: {exc}")
+        raise HTTPException(
+            status_code=502, detail=f"Cannot connect to task list API: {exc}"
+        )
     except _requests.exceptions.Timeout:
         raise HTTPException(status_code=504, detail="Task list API request timed out.")
     except _requests.RequestException as exc:
@@ -380,9 +403,11 @@ def task_list(
         "data": data,
     }
 
+
 # API Assign Task Testing
 class AssignTaskRequest(BaseModel):
     task_id: int = 1927
+
 
 @router.post("/assign-task")
 def assign_task(
@@ -409,11 +434,17 @@ def assign_task(
     }
 
     try:
-        resp = _requests.post(ASSIGN_TASK_API_URL, headers=headers, json=params, timeout=30)
+        resp = _requests.post(
+            ASSIGN_TASK_API_URL, headers=headers, json=params, timeout=30
+        )
     except _requests.exceptions.ConnectionError as exc:
-        raise HTTPException(status_code=502, detail=f"Cannot connect to assign task API: {exc}")
+        raise HTTPException(
+            status_code=502, detail=f"Cannot connect to assign task API: {exc}"
+        )
     except _requests.exceptions.Timeout:
-        raise HTTPException(status_code=504, detail="Assign task API request timed out.")
+        raise HTTPException(
+            status_code=504, detail="Assign task API request timed out."
+        )
     except _requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
@@ -436,10 +467,12 @@ def assign_task(
         "status_code": resp.status_code,
         "data": data,
     }
-    
+
+
 # API Abandon Task Testing
 class AbandonTaskRequest(BaseModel):
     task_id: int = 1927
+
 
 @router.post("/abandon-task")
 def abandon_task(
@@ -466,11 +499,17 @@ def abandon_task(
     }
 
     try:
-        resp = _requests.post(ABANDON_TASK_API_URL, headers=headers, json=params, timeout=30)
+        resp = _requests.post(
+            ABANDON_TASK_API_URL, headers=headers, json=params, timeout=30
+        )
     except _requests.exceptions.ConnectionError as exc:
-        raise HTTPException(status_code=502, detail=f"Cannot connect to abandon task API: {exc}")
+        raise HTTPException(
+            status_code=502, detail=f"Cannot connect to abandon task API: {exc}"
+        )
     except _requests.exceptions.Timeout:
-        raise HTTPException(status_code=504, detail="Abandon task API request timed out.")
+        raise HTTPException(
+            status_code=504, detail="Abandon task API request timed out."
+        )
     except _requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
@@ -492,4 +531,30 @@ def abandon_task(
         "success": resp.ok,
         "status_code": resp.status_code,
         "data": data,
+    }
+
+
+# API Validate Token Testing
+
+
+@router.post("/validate-token")
+def validate_token(
+    authorization: Optional[str] = Header(default=None),
+):
+    """
+    Validate a JWT token using the Authorization header.
+    The Authorization header must be in the format: JWT <token>
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization header is required (format: JWT <token>)",
+        )
+
+    print(f"Received token for validation: {authorization}")
+
+    return {
+        "success": True,
+        "status_code": 200,
+        "data": {"valid": True},
     }

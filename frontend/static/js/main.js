@@ -8,24 +8,28 @@ async function autoRetrieveToken() {
     const display = data.detail ?? data;
     jwtToken = display.token ? display.token.replace(/"/g, '') : '';
     console.log('[Page Load] JWT Token retrieved:', jwtToken);
+    return jwtToken;
   } catch (err) {
     console.error('[Page Load] Token retrieval failed:', err.message);
   }
 }
 
 // validate if token expires or not
-async function validateToken() {
+async function validateToken(jwtToken) {
+  if (!jwtToken) {
+    console.warn('[Token Validation] No token available, skipping validation.');
+    return;
+  }
   try {
     const res = await fetch('/api/test/validate-token', {
       method: 'POST',
       headers: {
         'Authorization': `JWT ${jwtToken}`,
-        'Content-Type': 'application/json',
       },
     });
     const data = await res.json();
     console.log('[Token Validation] Response:', data);
-    if (res.ok && data.valid) {
+    if (res.ok && data.data?.valid) {
       console.log('[Token Validation] Token is valid.');
     } else {
       console.warn('[Token Validation] Token is invalid or expired. Please retrieve a new token.');
@@ -35,8 +39,7 @@ async function validateToken() {
   }
 }
 
-autoRetrieveToken();
-
+autoRetrieveToken().then((token) => validateToken(token));
 
 
 //////////////////////////////// html elements and event listeners for testing API endpoints //////////////////
