@@ -16,7 +16,10 @@ import platform
 import shutil
 import subprocess
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Optional
+
+import jwt as _jwt
 
 import requests as _requests
 import websockets
@@ -29,7 +32,10 @@ router = APIRouter()
 CDP_HTTP = "http://localhost:9222"  # Chrome DevTools HTTP endpoint
 TARGET_URL = "https://101-next.orbitfin.ai"  # site to open / find
 TARGET_URL_CONTAINS = "101-next.orbitfin.ai"  # substring to match the tab
-TOKEN_STORAGE_KEY = "jwt_token"  # localStorage key holding the JWT
+JWT_TOKEN_STORAGE_KEY = "jwt_token"  # localStorage key holding the JWT
+REFRESH_TOKEN_STORAGE_KEY = (
+    "refresh_token"  # localStorage key holding the refresh token
+)
 TASK_LIST_API_URL = (
     "https://101-next.orbitfin.ai/prod/security/task/list"  # task list endpoint
 )
@@ -38,6 +44,9 @@ ASSIGN_TASK_API_URL = (
 )
 ABANDON_TASK_API_URL = (
     "https://101-next.orbitfin.ai/prod/security/task/abandon"  # abandon task endpoint
+)
+REFRESH_TOKEN_API_URL = (
+    "https://101-next.orbitfin.ai/prod/login/refresh"  # refresh token endpoint
 )
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -173,18 +182,34 @@ async def _wait_for_localStorage_token(ws_url: str, timeout: int = 60) -> str | 
     end = time.monotonic() + timeout
     while time.monotonic() < end:
         try:
-            result = await _cdp_eval(
+            jwt_token = await _cdp_eval(
                 ws_url,
                 1,
-                f"localStorage.getItem({json.dumps(TOKEN_STORAGE_KEY)})",
+                f"localStorage.getItem({json.dumps(JWT_TOKEN_STORAGE_KEY)})",
             )
-            value = result.get("result", {}).get("result", {}).get("value")
+            value = jwt_token.get("result", {}).get("result", {}).get("value")
             if value is not None:
                 return value
         except Exception:
             pass
         await asyncio.sleep(1)
     return None
+
+
+async def _read_both_tokens(ws_url: str) -> tuple[str | None, str | None]:
+    """Read both the JWT token and the refresh token from localStorage in one go."""
+    try:
+        jwt_result = await _cdp_eval(
+            ws_url, 1, f"localStorage.getItem({json.dumps(JWT_TOKEN_STORAGE_KEY)})"
+        )
+        refresh_result = await _cdp_eval(
+            ws_url, 2, f"localStorage.getItem({json.dumps(REFRESH_TOKEN_STORAGE_KEY)})"
+        )
+        jwt_value = jwt_result.get("result", {}).get("result", {}).get("value")
+        refresh_value = refresh_result.get("result", {}).get("result", {}).get("value")
+        return jwt_value, refresh_value
+    except Exception:
+        return None, None
 
 
 async def _cdp_eval(ws_url: str, msg_id: int, expression: str) -> dict:
@@ -276,24 +301,34 @@ async def token_auto_test():
                 "success": False,
                 "retry": True,
                 "detail": (
-                    f"Tab at {target['url']} loaded but '{TOKEN_STORAGE_KEY}' "
+                    f"Tab at {target['url']} loaded but '{JWT_TOKEN_STORAGE_KEY}' "
                     "was not found in localStorage after 60 s. "
                     "Please log in and click the button again."
                 ),
             }
+        # Also grab the refresh token now that the page has finished auth
+        _, refresh_value = await _read_both_tokens(ws_url)
         return {
             "success": True,
             "tab_url": target["url"],
-            "storage_key": TOKEN_STORAGE_KEY,
-            "token": token_value,
+            "jwt_token_storage_key": JWT_TOKEN_STORAGE_KEY,
+            "jwt_token_value": token_value,
+            "refresh_token_storage_key": REFRESH_TOKEN_STORAGE_KEY,
+            "refresh_token_value": refresh_value,
         }
 
     # 5. Read the token from localStorage via CDP (tab was already open)
     try:
-        result = await _cdp_eval(
+        jwt_token_result = await _cdp_eval(
             ws_url,
             1,
-            f"localStorage.getItem({json.dumps(TOKEN_STORAGE_KEY)})",
+            f"localStorage.getItem({json.dumps(JWT_TOKEN_STORAGE_KEY)})",
+        )
+
+        refresh_token_result = await _cdp_eval(
+            ws_url,
+            1,
+            f"localStorage.getItem({json.dumps(REFRESH_TOKEN_STORAGE_KEY)})",
         )
     except Exception as exc:
         raise HTTPException(
@@ -301,9 +336,12 @@ async def token_auto_test():
             detail=f"CDP WebSocket error: {exc}",
         )
 
-    token_value = result.get("result", {}).get("result", {}).get("value")
+    jwt_token_value = jwt_token_result.get("result", {}).get("result", {}).get("value")
+    refresh_token_value = (
+        refresh_token_result.get("result", {}).get("result", {}).get("value")
+    )
 
-    if token_value is None:
+    if jwt_token_value is None or refresh_token_value is None:
         # Retrieve available keys to help diagnose the wrong key name
         try:
             keys_result = await _cdp_eval(
@@ -321,7 +359,7 @@ async def token_auto_test():
         raise HTTPException(
             status_code=404,
             detail=(
-                f"Key '{TOKEN_STORAGE_KEY}' not found in localStorage of "
+                f"Key '{JWT_TOKEN_STORAGE_KEY}' or '{REFRESH_TOKEN_STORAGE_KEY}' not found in localStorage of "
                 f"tab '{target['url']}'. "
                 f"Available keys: {available_keys}"
             ),
@@ -330,8 +368,10 @@ async def token_auto_test():
     return {
         "success": True,
         "tab_url": target["url"],
-        "storage_key": TOKEN_STORAGE_KEY,
-        "token": token_value,
+        "jwt_token_storage_key": JWT_TOKEN_STORAGE_KEY,
+        "jwt_token_value": jwt_token_value,
+        "refresh_token_storage_key": REFRESH_TOKEN_STORAGE_KEY,
+        "refresh_token_value": refresh_token_value,
     }
 
 
@@ -340,11 +380,11 @@ async def token_auto_test():
 
 class TaskListRequest(BaseModel):
     page: int = 1
-    page_size: int = 12
+    page_size: int = 10
     view_type: str = "available"
 
 
-@router.post("/task-list")
+@router.post("/init-task-list")
 def task_list(
     body: TaskListRequest,
     authorization: Optional[str] = Header(default=None),
@@ -534,11 +574,72 @@ def abandon_task(
     }
 
 
+# Refresh Token Testing
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post("/refresh-token")
+def refresh_token(
+    body: RefreshTokenRequest,
+    authorization: Optional[str] = Header(default=None),
+):
+    """
+    Refresh the JWT token using the supplied refresh token.
+    """
+    headers = {
+        "Authorization": authorization,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    params = {
+        "refresh": body.refresh_token,
+    }
+
+    try:
+        resp = _requests.post(
+            REFRESH_TOKEN_API_URL, headers=headers, json=params, timeout=30
+        )
+    except _requests.exceptions.ConnectionError as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Cannot connect to refresh token API: {exc}"
+        )
+    except _requests.exceptions.Timeout:
+        raise HTTPException(
+            status_code=504, detail="Refresh token API request timed out."
+        )
+    except _requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    try:
+        data = resp.json()
+    except Exception:
+        content_type = resp.headers.get("Content-Type", "")
+        if "text/html" in content_type:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"REFRESH_TOKEN_API_URL ({REFRESH_TOKEN_API_URL}) returned HTML instead of JSON. "
+                    "The URL is likely wrong — check the actual API endpoint in Chrome DevTools Network tab."
+                ),
+            )
+        data = {"raw": resp.text}
+
+    return {
+        "success": resp.ok,
+        "status_code": resp.status_code,
+        "data": data,
+    }
+
+
 # API Validate Token Testing
+class ValidateTokenRequest(BaseModel):
+    refreshToken: str
 
 
 @router.post("/validate-token")
 def validate_token(
+    body: ValidateTokenRequest,
     authorization: Optional[str] = Header(default=None),
 ):
     """
@@ -551,10 +652,125 @@ def validate_token(
             detail="Authorization header is required (format: JWT <token>)",
         )
 
+    refresh_token = body.refreshToken  # may be None/empty if not yet available
+    print(
+        f"Received token for validation: {authorization}, refresh token: {refresh_token}"
+    )
+
+    # decode jwt token
+    # Strip the "JWT " (or "Bearer ") scheme prefix to get the raw token string
+    raw_token = authorization.strip()
+    for prefix in ("JWT ", "Bearer "):
+        if raw_token.upper().startswith(prefix.upper()):
+            raw_token = raw_token[len(prefix) :].strip()
+            break
+
+    try:
+        # Decode without signature verification – we only need the payload claims
+        payload = _jwt.decode(
+            raw_token,
+            options={"verify_signature": False},
+            algorithms=["HS256", "HS384", "HS512", "RS256", "RS384", "RS512"],
+        )
+    except _jwt.DecodeError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid JWT token – cannot decode: {exc}",
+        )
+
+    exp_ts: int | None = payload.get("exp")
+    if exp_ts is None:
+        raise HTTPException(
+            status_code=400,
+            detail="JWT token does not contain an 'exp' (expiration) claim.",
+        )
+
+    exp_dt = datetime.fromtimestamp(exp_ts, tz=timezone.utc)
+    exp_dt_plus_2 = exp_dt + timedelta(minutes=2)
+    now_dt = datetime.now(timezone.utc)
+    is_expired = now_dt > exp_dt_plus_2
+    seconds_remaining = (exp_dt_plus_2 - now_dt).total_seconds()
+
     print(f"Received token for validation: {authorization}")
+
+    new_jwt_token = raw_token
+    new_refresh_token = refresh_token
+
+    print(f"current jwt token is expired - {is_expired}")
+
+    if is_expired:
+        print(
+            f"Token is expired. Expired at {exp_dt.isoformat()} (UTC), "
+            f"{-seconds_remaining:.0f} seconds ago."
+        )
+        # need to call refresh token to get the new token
+
+        # region Call the refresh token API to get a new token
+
+        headers = {
+            "Authorization": authorization,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        params = {
+            "refresh": refresh_token,
+        }
+
+        try:
+            resp = _requests.post(
+                REFRESH_TOKEN_API_URL, headers=headers, json=params, timeout=30
+            )
+        except _requests.exceptions.ConnectionError as exc:
+            raise HTTPException(
+                status_code=502, detail=f"Cannot connect to refresh token API: {exc}"
+            )
+        except _requests.exceptions.Timeout:
+            raise HTTPException(
+                status_code=504, detail="Refresh token API request timed out."
+            )
+        except _requests.RequestException as exc:
+            raise HTTPException(status_code=502, detail=str(exc))
+
+        try:
+            data = resp.json()
+            print(f"Refresh token API response: {data}")
+
+            new_jwt_token = data.get("data", {}).get("access")
+            new_refresh_token = data.get("data", {}).get("refresh")
+
+            print(f"New JWT token: {new_jwt_token}")
+            print(f"New refresh token: {new_refresh_token}")
+
+        except Exception:
+            content_type = resp.headers.get("Content-Type", "")
+            if "text/html" in content_type:
+                raise HTTPException(
+                    status_code=502,
+                    detail=(
+                        f"REFRESH_TOKEN_API_URL ({REFRESH_TOKEN_API_URL}) returned HTML instead of JSON. "
+                        "The URL is likely wrong — check the actual API endpoint in Chrome DevTools Network tab."
+                    ),
+                )
+            data = {"raw": resp.text}
+
+        # endregion
+
+    print(
+        f"Returning token validation result: valid={not is_expired}, expired={is_expired}, "
+        f"new_jwt_token={new_jwt_token}, new_refresh_token={new_refresh_token}"
+    )
 
     return {
         "success": True,
         "status_code": 200,
-        "data": {"valid": True},
+        "data": {
+            "valid": not is_expired,
+            "expired": is_expired,
+            "exp": exp_ts,
+            "exp_utc": exp_dt.isoformat(),
+            "now_utc": now_dt.isoformat(),
+            "seconds_remaining": round(seconds_remaining, 0),
+            "new_jwt_token": new_jwt_token,
+            "new_refresh_token": new_refresh_token,
+        },
     }

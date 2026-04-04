@@ -103,12 +103,13 @@ def token_auto_test():
 def token_validate_test():
     try:
         auth_header = request.headers.get("Authorization", "")
+        body = request.get_json(silent=True) or {}
         headers = {}
         if auth_header:
             headers["Authorization"] = auth_header
         # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
         resp = requests.post(
-            _api("/api/test/validate-token"), headers=headers, timeout=60
+            _api("/api/test/validate-token"), json=body, headers=headers, timeout=60
         )
         # Relay the backend response as-is (including error details from FastAPI)
         return jsonify(resp.json()), resp.status_code
@@ -137,7 +138,7 @@ def token_validate_test():
 
 
 # api task list testing
-@app.route("/api/test/task-list", methods=["POST"])
+@app.route("/api/test/init-task-list", methods=["POST"])
 def api_task_list_test():
     try:
         auth_header = request.headers.get("Authorization", "")
@@ -147,7 +148,7 @@ def api_task_list_test():
             headers["Authorization"] = auth_header
         # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
         resp = requests.post(
-            _api("/api/test/task-list"),
+            _api("/api/test/init-task-list"),
             json=body,
             headers=headers,
             timeout=60,

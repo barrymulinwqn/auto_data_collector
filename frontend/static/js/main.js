@@ -1,4 +1,5 @@
 let jwtToken = '';
+let refreshToken = '';
 
 // Fetch token on page load
 async function autoRetrieveToken() {
@@ -6,16 +7,18 @@ async function autoRetrieveToken() {
     const res = await fetch('/api/test/token', { method: 'POST' });
     const data = await res.json();
     const display = data.detail ?? data;
-    jwtToken = display.token ? display.token.replace(/"/g, '') : '';
+    jwtToken = display.jwt_token_value ? display.jwt_token_value.replace(/"/g, '') : '';
+    refreshToken = display.refresh_token_value ? display.refresh_token_value.replace(/"/g, '') : '';
     console.log('[Page Load] JWT Token retrieved:', jwtToken);
-    return jwtToken;
+    console.log('[Page Load] Refresh Token retrieved:', refreshToken);
+    return { jwtToken, refreshToken };
   } catch (err) {
     console.error('[Page Load] Token retrieval failed:', err.message);
   }
 }
 
 // validate if token expires or not
-async function validateToken(jwtToken) {
+async function validateToken(jwtToken, refreshToken) {
   if (!jwtToken) {
     console.warn('[Token Validation] No token available, skipping validation.');
     return;
@@ -25,21 +28,79 @@ async function validateToken(jwtToken) {
       method: 'POST',
       headers: {
         'Authorization': `JWT ${jwtToken}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({refreshToken: refreshToken}),
     });
     const data = await res.json();
     console.log('[Token Validation] Response:', data);
-    if (res.ok && data.data?.valid) {
+
+    if (res.ok && data.data) {
       console.log('[Token Validation] Token is valid.');
     } else {
       console.warn('[Token Validation] Token is invalid or expired. Please retrieve a new token.');
     }
+
+    token_expired = data.detail?.expired || data.data?.expired || false;
+    jwtToken = data.data.new_jwt_token ? data.data.new_jwt_token.replace(/"/g, '') : '';
+    refreshToken = data.data.new_refresh_token ? data.data.new_refresh_token.replace(/"/g, '') : '';
+    console.log('[Token Validation] Token expired:', token_expired);
+    console.log('[Token Validation] New JWT Token:', jwtToken);
+    console.log('[Token Validation] New Refresh Token:', refreshToken);
+    
+    return {token_expired, jwtToken, refreshToken };
   } catch (err) {
     console.error('[Token Validation] Failed to validate token:', err.message);
   }
 }
 
-autoRetrieveToken().then((token) => validateToken(token));
+// Task List API testing
+async function getAllTaskList(jwtToken) {
+  if (!jwtToken) {
+    console.warn('[Task List] No token available, skipping retrieval.');
+    return;
+  }
+  try {
+    const res = await fetch('/api/test/init-task-list', {
+      method: 'POST',
+      headers: {
+        'Authorization': `JWT ${jwtToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({page: 1, page_size: 10, view_type: "available"}),
+    });
+    const data = await res.json();
+    console.log('[Task List] Response:', data);
+
+    if (res.ok && data.data) {
+      console.log('[Task List] Task list retrieved successfully.');
+    } else {
+      console.warn('[Task List] Failed to retrieve task list. Please check your token.');
+
+    }
+
+    token_expired = data.detail?.expired || data.data?.expired || false;
+    jwtToken = data.data.new_jwt_token ? data.data.new_jwt_token.replace(/"/g, '') : '';
+    refreshToken = data.data.new_refresh_token ? data.data.new_refresh_token.replace(/"/g, '') : '';
+    console.log('[Task List] Token expired:', token_expired);
+    console.log('[Task List] New JWT Token:', jwtToken);
+    console.log('[Task List] New Refresh Token:', refreshToken);
+    
+    return {token_expired, jwtToken, refreshToken };
+  } catch (err) {
+    console.error('[Task List] Failed to retrieve task list:', err.message);
+  }
+}
+
+
+autoRetrieveToken().then(({ jwtToken, refreshToken }) => validateToken(jwtToken, refreshToken)).then(({token_expired, jwtToken, refreshToken}) => {
+  console.log(`[Initialization] Token retrieval and validation complete. Token expired: ${token_expired}, JWT Token: ${jwtToken}, Refresh Token: ${refreshToken}`);
+  // Retrieve Task List data
+  getAllTaskList(jwtToken);
+}).catch(err => {
+  console.error('[Initialization] Error during token retrieval/validation:', err.message);
+});
+
 
 
 //////////////////////////////// html elements and event listeners for testing API endpoints //////////////////
@@ -65,8 +126,10 @@ if (tokenAutoRetrieveBtn) {
 
       console.log('[Token Auto Retrieve] Response:', display);
 
-      jwtToken = display.token ? display.token.replace(/"/g, '') : '';
-       console.log('[Token Auto Retrieve] JWT Token:', jwtToken);
+      jwtToken = display.jwt_token_value ? display.jwt_token_value.replace(/"/g, '') : '';
+      refreshToken = display.refresh_token_value ? display.refresh_token_value.replace(/"/g, '') : '';
+      console.log('[Token Auto Retrieve] JWT Token:', jwtToken);
+      console.log('[Token Auto Retrieve] Refresh Token:', refreshToken);
 
       const text = typeof display === 'string' ? display : JSON.stringify(display, null, 2);
       tokenAutoRetrieveResult.textContent = text;
@@ -95,13 +158,13 @@ if (apiTaskListTestBtn) {
     apiTaskListTestResult.textContent = '';
     apiTaskListTestResult.className = 'test-result';
     try {
-      const res = await fetch('/api/test/task-list', {
+      const res = await fetch('/api/test/init-task-list', {
         method: 'POST',
         headers: {
           'Authorization': `JWT ${jwtToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({page: 1, page_size: 12, view_type: "available"}),
+          
       });
 
       const data = await res.json();
