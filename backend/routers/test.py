@@ -13,6 +13,7 @@ test.py – Function-test endpoints.
 import asyncio
 import json
 import platform
+import re
 import shutil
 import subprocess
 import time
@@ -25,6 +26,8 @@ import requests as _requests
 import websockets
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
+
+from backend.data_conversion import convert_task_list_response
 
 router = APIRouter()
 
@@ -425,6 +428,10 @@ def task_list(
 
     try:
         data = resp.json()
+
+        init_tasks = convert_task_list_response(data)
+        print(f"initial task list {init_tasks}")
+
     except Exception:
         content_type = resp.headers.get("Content-Type", "")
         if "text/html" in content_type:
@@ -440,7 +447,7 @@ def task_list(
     return {
         "success": resp.ok,
         "status_code": resp.status_code,
-        "data": data,
+        "data": init_tasks,
     }
 
 
@@ -665,6 +672,9 @@ def validate_token(
             raw_token = raw_token[len(prefix) :].strip()
             break
 
+    # use regex to replace the global quote
+    raw_token = re.sub(r'^"|"$', "", raw_token)
+
     try:
         # Decode without signature verification – we only need the payload claims
         payload = _jwt.decode(
@@ -719,6 +729,9 @@ def validate_token(
         try:
             resp = _requests.post(
                 REFRESH_TOKEN_API_URL, headers=headers, json=params, timeout=30
+            )
+            print(
+                f"Called refresh token API at {REFRESH_TOKEN_API_URL} with refresh token: {refresh_token}"
             )
         except _requests.exceptions.ConnectionError as exc:
             raise HTTPException(

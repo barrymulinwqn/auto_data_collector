@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Task Dashboard – Auto Data Collector</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    </head>
+    <body>
+        <nav class="navbar">
+            <div style="display: flex; align-items: center; gap: 1rem">
+                <span class="brand">Auto Data Collector</span>
+            </div>
+        </nav>
+
+        <main class="dash-container">
+            <div class="dash-header">
+                <h1>Task Dashboard</h1>
+            </div>
+
+            {% if not tasks %}
+            <p class="empty">No tasks available.</p>
+            {% endif %} {% for task in tasks %}
+            <div class="task-card">
+                {# ── Task header ────────────────────────────────── #}
+                <div class="task-header" onclick="toggleSection('task-body-{{ task.id }}', this)">
+                    <div class="task-title-row">
+                        <span class="task-name" data-tooltip="task_name: The display name of this task">
+                            {{ task.task_name }}
+                        </span>
+                        <span
+                            class="badge badge--{{ task.status | lower | replace(' ', '-') }}"
+                            data-tooltip="status: Current processing state of the task">
+                            {{ task.status }}
+                        </span>
+                        <span
+                            class="badge badge--priority-{{ task.priority | lower }}"
+                            data-tooltip="priority: Urgency level — High / Medium / Low">
+                            {{ task.priority }}
+                        </span>
+                        <span
+                            class="badge badge--type"
+                            data-tooltip="task_type: Category or type of work for this task">
+                            {{ task.task_type }}
+                        </span>
+                    </div>
+                    <div class="task-meta-row">
+                        <span
+                            class="meta-item"
+                            data-tooltip="deadline: Target date by which this task must be completed">
+                            🗓 Deadline:
+                            <strong>{{ task.deadline }}</strong>
+                        </span>
+                        <span
+                            class="meta-item"
+                            data-tooltip="completed_companies / total_companies: Number of companies finished vs. total assigned">
+                            🏢 Companies:
+                            <strong>{{ task.completed_companies }} / {{ task.total_companies }}</strong>
+                        </span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    {# Progress bar #}
+                    <div
+                        class="progress-bar-wrap"
+                        data-tooltip="progress: Ratio of completed_companies ÷ total_companies (0.0 – 1.0)">
+                        <div class="progress-bar-fill" style="width:{{ (task.progress * 100) | round(1) }}%"></div>
+                    </div>
+                    <div class="progress-label">{{ (task.progress * 100) | round(1) }}% complete</div>
+                </div>
+
+                {# ── Task body (collapsible) ─────────────────────── #}
+                <div id="task-body-{{ task.id }}" class="task-body">
+                    {% if task.task_description %}
+                    <div
+                        class="task-desc"
+                        data-tooltip="task_description: Full description and objectives for this task">
+                        {{ task.task_description }}
+                    </div>
+                    {% endif %}
+
+                    <div class="section-label">Companies ({{ task.companyInfos | length }})</div>
+
+                    {% if not task.companyInfos %}
+                    <p class="empty" style="padding: 0.5rem 1rem">No companies linked to this task.</p>
+                    {% endif %} {% for company in task.companyInfos %}
+                    <div class="company-card">
+                        {# ── Company header ───────────────────────── #}
+                        <div
+                            class="company-header"
+                            onclick="toggleSection('company-body-{{ task.id }}-{{ loop.index }}', this)">
+                            <div class="company-title-row">
+                                <span class="company-name" data-tooltip="name: Short display name for this company">
+                                    {{ company.name }}
+                                </span>
+                                <span
+                                    class="company-entity"
+                                    data-tooltip="entity_name: Full registered legal entity name">
+                                    {{ company.entity_name }}
+                                </span>
+                                <span
+                                    class="badge badge--{{ company.status | lower | replace(' ', '-') }}"
+                                    data-tooltip="status: Current data-collection status for this company">
+                                    {{ company.status }}
+                                </span>
+                            </div>
+                            <div class="company-meta-row">
+                                <span
+                                    class="meta-item"
+                                    data-tooltip="current_step: Active workflow step this company is currently in">
+                                    Step:
+                                    <strong>{{ company.current_step }}</strong>
+                                </span>
+                                {% if company.completed_at %}
+                                <span
+                                    class="meta-item"
+                                    data-tooltip="completed_at: Timestamp when data collection for this company was finished">
+                                    Completed:
+                                    <strong>{{ company.completed_at }}</strong>
+                                </span>
+                                {% endif %}
+                                <span class="toggle-icon">▼</span>
+                            </div>
+                        </div>
+
+                        {# ── Company body (collapsible) ────────────── #}
+                        <div id="company-body-{{ task.id }}-{{ loop.index }}" class="company-body">
+                            {# Detail grid #}
+                            <div class="detail-grid">
+                                <div
+                                    class="detail-item"
+                                    data-tooltip="orbit_entity_id: Unique identifier for this entity on the Orbit platform">
+                                    <span class="detail-label">Orbit Entity ID</span>
+                                    <span class="detail-value">{{ company.orbit_entity_id or '—' }}</span>
+                                </div>
+                                <div
+                                    class="detail-item"
+                                    data-tooltip="notes: Internal notes specific to this company entry">
+                                    <span class="detail-label">Notes</span>
+                                    <span class="detail-value">{{ company.notes or '—' }}</span>
+                                </div>
+                                <div
+                                    class="detail-item"
+                                    data-tooltip="shared_notes: Notes visible to all team members working on this task">
+                                    <span class="detail-label">Shared Notes</span>
+                                    <span class="detail-value">{{ company.shared_notes or '—' }}</span>
+                                </div>
+                                <div
+                                    class="detail-item"
+                                    data-tooltip="review_rejection_reason: Explanation provided when a reviewer rejected this company's submission">
+                                    <span class="detail-label">Review Rejection Reason</span>
+                                    <span
+                                        class="detail-value {% if company.review_rejection_reason %}detail-value--warn{% endif %}">
+                                        {{ company.review_rejection_reason or '—' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {# Missing reports #} {% if company.missing_reports %}
+                            <div
+                                class="missing-reports"
+                                data-tooltip="missing_reports: List of required report documents not yet collected for this company">
+                                <span class="detail-label">Missing Reports</span>
+                                <div class="tag-list">
+                                    {% for report in company.missing_reports %}
+                                    <span
+                                        class="tag tag--warn"
+                                        data-tooltip="missing_reports[{{ loop.index0 }}]: '{{ report }}' has not been collected yet">
+                                        {{ report }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %} {# URLs #} {% if company.urlInfos %}
+                            <div class="url-section">
+                                <span
+                                    class="detail-label"
+                                    data-tooltip="urlInfos: Collection of source URLs linked to this company">
+                                    URLs ({{ company.urlInfos | length }})
+                                </span>
+                                <table class="url-table">
+                                    <thead>
+                                        <tr>
+                                            <th
+                                                data-tooltip="URLInfo.type: Category of this URL resource (e.g. Annual Report, Certificate)">
+                                                Type
+                                            </th>
+                                            <th data-tooltip="URLInfo.url: Direct link to the document or resource">
+                                                URL
+                                            </th>
+                                            <th
+                                                data-tooltip="URLInfo.comment: Optional human-readable note about this URL">
+                                                Comment
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for url in company.urlInfos %}
+                                        <tr>
+                                            <td>
+                                                <span class="tag tag--url" data-tooltip="type: {{ url.type }}">
+                                                    {{ url.type }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a
+                                                    href="{{ url.url }}"
+                                                    target="_blank"
+                                                    rel="noopener"
+                                                    class="url-link"
+                                                    data-tooltip="url: Full source URL — click to open in new tab">
+                                                    {{ url.url | truncate(60) }}
+                                                </a>
+                                            </td>
+                                            <td
+                                                class="url-comment"
+                                                data-tooltip="comment: {{ url.comment if url.comment else 'No comment provided' }}">
+                                                {{ url.comment or '—' }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="empty" style="font-size: 0.85rem; padding: 0.25rem 0">No URLs linked.</p>
+                            {% endif %}
+                        </div>
+                        {# end company-body #}
+                    </div>
+                    {# end company-card #} {% endfor %}
+                </div>
+                {# end task-body #}
+            </div>
+            {# end task-card #} {% endfor %}
+        </main>
+
+        <script src="{{ url_for('static', filename='js/refreshJWTToken.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+        <script>
+            function toggleSection(id, headerEl) {
+                const body = document.getElementById(id);
+                const icon = headerEl.querySelector(".toggle-icon");
+                const isOpen = body.classList.toggle("open");
+                if (icon) icon.textContent = isOpen ? "▲" : "▼";
+            }
+
+            // ── Body-level tooltip (never clipped by overflow:hidden) ──────
+            (function () {
+                const GAP = 8; // px between element edge and bubble
+                const ARROW = 10; // arrow height, px
+
+                const bubble = document.createElement("div");
+                bubble.id = "tooltip-bubble";
+                document.body.appendChild(bubble);
+
+                function show(el) {
+                    const text = el.getAttribute("data-tooltip");
+                    if (!text) return;
+                    bubble.textContent = text;
+                    bubble.classList.remove("above", "below", "visible");
+
+                    // Measure after setting text (while hidden)
+                    bubble.style.visibility = "hidden";
+                    bubble.style.display = "block";
+                    const bw = bubble.offsetWidth;
+                    const bh = bubble.offsetHeight;
+                    bubble.style.visibility = "";
+
+                    const r = el.getBoundingClientRect();
+                    const vw = window.innerWidth;
+                    const vh = window.innerHeight;
+
+                    // Decide above vs below
+                    const spaceAbove = r.top;
+                    const spaceBelow = vh - r.bottom;
+                    const placeAbove = spaceAbove >= bh + GAP + ARROW || spaceAbove >= spaceBelow;
+
+                    // Horizontal: centre on element, clamp to viewport
+                    let left = r.left + r.width / 2 - bw / 2;
+                    left = Math.max(8, Math.min(left, vw - bw - 8));
+
+                    let top;
+                    if (placeAbove) {
+                        top = r.top - bh - GAP - ARROW;
+                        bubble.classList.add("above");
+                    } else {
+                        top = r.bottom + GAP + ARROW;
+                        bubble.classList.add("below");
+                    }
+
+                    bubble.style.left = left + "px";
+                    bubble.style.top = top + "px";
+                    bubble.classList.add("visible");
+                }
+
+                function hide() {
+                    bubble.classList.remove("visible");
+                }
+
+                document.addEventListener("mouseover", function (e) {
+                    const target = e.target.closest("[data-tooltip]");
+                    if (target) show(target);
+                });
+                document.addEventListener("mouseout", function (e) {
+                    const target = e.target.closest("[data-tooltip]");
+                    if (target) hide();
+                });
+                // Hide on scroll so bubble doesn't drift
+                window.addEventListener("scroll", hide, { passive: true });
+            })();
+        </script>
+    </body>
+</html>

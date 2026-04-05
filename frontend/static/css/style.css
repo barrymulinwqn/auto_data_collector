@@ -118,3 +118,169 @@ tr:last-child td { border-bottom: none; }
 .test-result--success { background: #d1fae5; color: #065f46; }
 .test-result--warning { background: #fef9c3; color: #713f12; }
 .test-result--error   { background: #fee2e2; color: #991b1b; }
+
+/* ══════════════════════════════════════════════════════
+   TASK DASHBOARD
+   ══════════════════════════════════════════════════════ */
+
+.dash-container { max-width: 1100px; margin: 2rem auto; padding: 0 1.25rem; }
+.dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.dash-header h1 { font-size: 1.5rem; font-weight: 700; }
+
+/* ── Task card ─────────────────────────────────────── */
+.task-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.task-header {
+  padding: 1rem 1.25rem 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  background: #f8faff;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.15s;
+}
+.task-header:hover { background: #eff4ff; }
+
+.task-title-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
+.task-name { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
+
+.task-meta-row { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; font-size: 0.85rem; color: #6b7280; margin-bottom: 0.5rem; }
+.meta-item strong { color: #374151; }
+.toggle-icon { margin-left: auto; font-size: 0.75rem; color: #9ca3af; }
+
+/* Progress bar */
+.progress-bar-wrap { background: #e5e7eb; border-radius: 999px; height: 7px; margin-bottom: 0.25rem; }
+.progress-bar-fill { background: #2563eb; height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+.progress-label { font-size: 0.75rem; color: #6b7280; }
+
+/* Task collapsed body */
+.task-body { display: none; padding: 1rem 1.25rem; }
+.task-body.open { display: block; }
+
+.task-desc {
+  font-size: 0.9rem; color: #4b5563;
+  background: #f9fafb; border-left: 3px solid #2563eb;
+  padding: 0.5rem 0.75rem; border-radius: 0 4px 4px 0;
+  margin-bottom: 1rem;
+}
+.section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; margin-bottom: 0.6rem; }
+
+/* ── Badges ────────────────────────────────────────── */
+.badge {
+  display: inline-block; padding: 0.2em 0.65em;
+  border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+  white-space: nowrap;
+}
+/* Status colours */
+.badge--active, .badge--completed  { background: #d1fae5; color: #065f46; }
+.badge--in-progress                { background: #dbeafe; color: #1d4ed8; }
+.badge--pending                    { background: #fef9c3; color: #854d0e; }
+.badge--rejected, .badge--failed   { background: #fee2e2; color: #991b1b; }
+.badge--type                       { background: #ede9fe; color: #5b21b6; }
+/* Priority colours */
+.badge--priority-high              { background: #fee2e2; color: #991b1b; }
+.badge--priority-medium            { background: #fef9c3; color: #854d0e; }
+.badge--priority-low               { background: #d1fae5; color: #065f46; }
+
+/* ── Company card ──────────────────────────────────── */
+.company-card {
+  border: 1px solid #e5e7eb; border-radius: 8px;
+  margin-bottom: 0.7rem; overflow: hidden;
+}
+
+.company-header {
+  padding: 0.65rem 1rem; cursor: pointer; user-select: none;
+  background: #f9fafb;
+  transition: background 0.15s;
+}
+.company-header:hover { background: #f3f4f6; }
+
+.company-title-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.2rem; }
+.company-name  { font-weight: 600; font-size: 0.95rem; color: #1e293b; }
+.company-entity { font-size: 0.8rem; color: #6b7280; }
+
+.company-meta-row { display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; color: #6b7280; flex-wrap: wrap; }
+
+/* Company collapsed body */
+.company-body { display: none; padding: 0.85rem 1rem; border-top: 1px solid #e5e7eb; }
+.company-body.open { display: block; }
+
+/* ── Detail grid ───────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.detail-item { display: flex; flex-direction: column; gap: 0.15rem; }
+.detail-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #9ca3af; }
+.detail-value { font-size: 0.85rem; color: #374151; word-break: break-word; }
+.detail-value--warn { color: #b91c1c; font-weight: 600; }
+
+/* ── Missing reports / tags ────────────────────────── */
+.missing-reports { margin-bottom: 0.75rem; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; }
+.tag {
+  display: inline-block; padding: 0.2em 0.6em;
+  border-radius: 4px; font-size: 0.78rem; font-weight: 500;
+}
+.tag--warn { background: #fee2e2; color: #991b1b; }
+.tag--url  { background: #ede9fe; color: #5b21b6; }
+
+/* ── URL table ─────────────────────────────────────── */
+.url-section { margin-top: 0.5rem; }
+.url-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.82rem; background: #fff;
+  border-radius: 6px; overflow: hidden;
+  border: 1px solid #e5e7eb;
+  margin-top: 0.4rem;
+}
+.url-table th { background: #f3f4f6; font-weight: 600; padding: 0.4rem 0.7rem; color: #374151; }
+.url-table td { padding: 0.4rem 0.7rem; border-top: 1px solid #e5e7eb; vertical-align: top; }
+.url-link { color: #2563eb; text-decoration: none; word-break: break-all; }
+.url-link:hover { text-decoration: underline; }
+.url-comment { color: #6b7280; }
+
+/* ── Tooltips (body-level, position:fixed — never clipped) ── */
+#tooltip-bubble {
+  position: fixed;
+  z-index: 99999;
+  pointer-events: none;
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 0.72rem;
+  font-family: monospace;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 0.35em 0.65em;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.3);
+  max-width: 320px;
+  word-break: break-word;
+  white-space: normal;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+#tooltip-bubble.visible { opacity: 1; }
+#tooltip-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+}
+#tooltip-bubble.above::after {
+  top: 100%;
+  border-top-color: #1e293b;
+}
+#tooltip-bubble.below::after {
+  bottom: 100%;
+  border-bottom-color: #1e293b;
+}

@@ -15,21 +15,210 @@ def _api(path: str) -> str:
 @app.route("/")
 def index():
     try:
-        resp = requests.get(_api("/api/data/"), timeout=5)
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(_api("/api/test/token"), timeout=60)
         resp.raise_for_status()
-        items = resp.json()
+        tokens = resp.json()
+        print(f"Token retrieval successful: {tokens}")
+        jwt_token = tokens.get("jwt_token_value")
+        refresh_token = tokens.get("refresh_token_value")
+        print(f"JWT Token: {jwt_token}, Refresh Token: {refresh_token}")
+
+        # validate if jwt_token is expired or not
+        body = {
+            "refreshToken": refresh_token,
+        }
+        headers = {}
+        if jwt_token:
+            headers["Authorization"] = f"JWT {jwt_token}"
+            headers["Content-Type"] = "application/json"
+
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(
+            _api("/api/test/validate-token"),
+            json=body,
+            headers=headers,
+            timeout=60,
+        )
+        resp.raise_for_status()
+        new_tokens = resp.json()
+        print(f"Token validation successful: {new_tokens}")
+
+        new_jwt_token = new_tokens.get("data", {}).get("new_jwt_token")
+        new_refresh_token = new_tokens.get("data", {}).get("new_refresh_token")
+        print(f"New JWT Token: {new_jwt_token}, New Refresh Token: {new_refresh_token}")
+
+        # get task list data
+        body = {"page": 1, "page_size": 10, "view_type": "available"}
+        headers = {}
+        if new_jwt_token:
+            headers["Authorization"] = f"JWT {new_jwt_token}"
+            headers["Content-Type"] = "application/json"
+
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(
+            _api("/api/test/init-task-list"),
+            json=body,
+            headers=headers,
+            timeout=60,
+        )
+        resp.raise_for_status()
+        ini_task_list = resp.json()
+        tasks = ini_task_list.get("data", [])
+        print(f"Initial Task List retrieval successful: {tasks}")
+
     except requests.RequestException:
-        items = []
+        tasks = []
         flash("Could not connect to backend API.", "danger")
     # return render_template("index.html", items=items)
-    # Sample data with a 'category' attribute for grouping
-    data = [
-        {"id": 1, "name": "Laptop", "category": "Electronics", "price": 1200},
-        {"id": 2, "name": "Smartphone", "category": "Electronics", "price": 800},
-        {"id": 3, "name": "Chair", "category": "Furniture", "price": 150},
-        {"id": 4, "name": "Table", "category": "Furniture", "price": 300},
+    return render_template("task_dashboard.html", tasks=tasks)
+
+
+@app.route("/tasks")
+def task_dashboard():
+    """Render the task dashboard with nested company and URL info."""
+    # Sample data mirroring TaskInfo / CompanyInfo / URLInfo schemas
+    tasks = [
+        {
+            "id": 1,
+            "task_name": "Q1 Annual Report Collection",
+            "status": "In Progress",
+            "priority": "High",
+            "deadline": "2026-04-30",
+            "total_companies": 3,
+            "completed_companies": 1,
+            "task_type": "Financial Report",
+            "progress": 0.33,
+            "task_description": "Collect Q1 annual reports for all assigned companies.",
+            "companyInfos": [
+                {
+                    "task_id": 1,
+                    "name": "Acme Corp",
+                    "entity_name": "Acme Corporation Ltd.",
+                    "orbit_entity_id": "ORB-001",
+                    "status": "Completed",
+                    "current_step": "Review",
+                    "completed_at": "2026-04-01",
+                    "notes": "All documents received.",
+                    "shared_notes": "Reviewed by team lead.",
+                    "review_rejection_reason": "",
+                    "missing_reports": [],
+                    "urlInfos": [
+                        {
+                            "id": 1,
+                            "url": "https://acme.com/annual-report-2025.pdf",
+                            "type": "Annual Report",
+                            "comment": "Official filing",
+                        },
+                        {
+                            "id": 2,
+                            "url": "https://acme.com/auditor-statement.pdf",
+                            "type": "Auditor Statement",
+                            "comment": None,
+                        },
+                    ],
+                },
+                {
+                    "task_id": 1,
+                    "name": "Globex Industries",
+                    "entity_name": "Globex Industries Inc.",
+                    "orbit_entity_id": "ORB-002",
+                    "status": "Pending",
+                    "current_step": "Data Entry",
+                    "completed_at": "",
+                    "notes": "Waiting for CFO approval.",
+                    "shared_notes": "",
+                    "review_rejection_reason": "Missing balance sheet.",
+                    "missing_reports": ["Balance Sheet", "Cash Flow Statement"],
+                    "urlInfos": [
+                        {
+                            "id": 3,
+                            "url": "https://globex.com/reports/2025",
+                            "type": "Annual Report",
+                            "comment": "Partial upload",
+                        },
+                    ],
+                },
+                {
+                    "task_id": 1,
+                    "name": "Initech Solutions",
+                    "entity_name": "Initech Solutions Pte. Ltd.",
+                    "orbit_entity_id": "ORB-003",
+                    "status": "Pending",
+                    "current_step": "Collection",
+                    "completed_at": "",
+                    "notes": "",
+                    "shared_notes": "",
+                    "review_rejection_reason": "",
+                    "missing_reports": [],
+                    "urlInfos": [],
+                },
+            ],
+        },
+        {
+            "id": 2,
+            "task_name": "ESG Disclosure Review",
+            "status": "Active",
+            "priority": "Medium",
+            "deadline": "2026-05-15",
+            "total_companies": 2,
+            "completed_companies": 2,
+            "task_type": "ESG",
+            "progress": 1.0,
+            "task_description": "Review and archive ESG disclosure documents.",
+            "companyInfos": [
+                {
+                    "task_id": 2,
+                    "name": "Umbrella Corp",
+                    "entity_name": "Umbrella Corporation",
+                    "orbit_entity_id": "ORB-010",
+                    "status": "Completed",
+                    "current_step": "Archived",
+                    "completed_at": "2026-03-28",
+                    "notes": "ESG report verified.",
+                    "shared_notes": "Carbon neutral certification attached.",
+                    "review_rejection_reason": "",
+                    "missing_reports": [],
+                    "urlInfos": [
+                        {
+                            "id": 10,
+                            "url": "https://umbrella.com/esg-2025.pdf",
+                            "type": "ESG Report",
+                            "comment": "Certified",
+                        },
+                    ],
+                },
+                {
+                    "task_id": 2,
+                    "name": "Stark Industries",
+                    "entity_name": "Stark Industries LLC",
+                    "orbit_entity_id": "ORB-011",
+                    "status": "Completed",
+                    "current_step": "Archived",
+                    "completed_at": "2026-03-30",
+                    "notes": "All ESG metrics collected.",
+                    "shared_notes": "",
+                    "review_rejection_reason": "",
+                    "missing_reports": [],
+                    "urlInfos": [
+                        {
+                            "id": 11,
+                            "url": "https://stark.com/sustainability-report.pdf",
+                            "type": "ESG Report",
+                            "comment": None,
+                        },
+                        {
+                            "id": 12,
+                            "url": "https://stark.com/carbon-offset-cert.pdf",
+                            "type": "Certificate",
+                            "comment": "Third-party verified",
+                        },
+                    ],
+                },
+            ],
+        },
     ]
-    return render_template("OCollector.html", items=data)
+    return render_template("task_dashboard.html", tasks=tasks)
 
 
 @app.route("/create", methods=["GET", "POST"])

@@ -93,13 +93,13 @@ async function getAllTaskList(jwtToken) {
 }
 
 
-autoRetrieveToken().then(({ jwtToken, refreshToken }) => validateToken(jwtToken, refreshToken)).then(({token_expired, jwtToken, refreshToken}) => {
-  console.log(`[Initialization] Token retrieval and validation complete. Token expired: ${token_expired}, JWT Token: ${jwtToken}, Refresh Token: ${refreshToken}`);
-  // Retrieve Task List data
-  getAllTaskList(jwtToken);
-}).catch(err => {
-  console.error('[Initialization] Error during token retrieval/validation:', err.message);
-});
+// autoRetrieveToken().then(({ jwtToken, refreshToken }) => validateToken(jwtToken, refreshToken)).then(({token_expired, jwtToken, refreshToken}) => {
+//   console.log(`[Initialization] Token retrieval and validation complete. Token expired: ${token_expired}, JWT Token: ${jwtToken}, Refresh Token: ${refreshToken}`);
+//   // Retrieve Task List data
+//   getAllTaskList(jwtToken);
+// }).catch(err => {
+//   console.error('[Initialization] Error during token retrieval/validation:', err.message);
+// });
 
 
 
