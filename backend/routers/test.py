@@ -27,7 +27,11 @@ import websockets
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
-from backend.data_conversion import convert_task_list_response
+from backend.data_conversion import (
+    convert_task_details,
+    convert_pagination_response,
+    convert_task_list_response,
+)
 
 router = APIRouter()
 
@@ -51,6 +55,10 @@ ABANDON_TASK_API_URL = (
 REFRESH_TOKEN_API_URL = (
     "https://101-next.orbitfin.ai/prod/login/refresh"  # refresh token endpoint
 )
+TASK_DETAIL_API_URL = (
+    "https://101-next.orbitfin.ai/prod/security/task/detail"  # task detail endpoint
+)
+TASK_DETAIL_ENRICH_IDS = {2017, 2018}
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── Chrome launch helpers ──────────────────────────────────────────────────────
@@ -387,6 +395,50 @@ class TaskListRequest(BaseModel):
     view_type: str = "available"
 
 
+def _fetch_task_detail(task_id: int, headers: dict[str, str]) -> dict:
+    """Fetch a single task detail payload and return the decoded JSON body."""
+    try:
+        resp = _requests.get(
+            TASK_DETAIL_API_URL,
+            params={"task_id": task_id},
+            headers=headers,
+            timeout=60,
+        )
+        resp.raise_for_status()
+    except _requests.exceptions.ConnectionError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Cannot connect to task detail API: {exc}",
+        )
+    except _requests.exceptions.Timeout:
+        raise HTTPException(
+            status_code=504, detail="Task detail API request timed out."
+        )
+    except _requests.exceptions.HTTPError as exc:
+        status_code = exc.response.status_code if exc.response is not None else 502
+        raise HTTPException(
+            status_code=status_code,
+            detail=f"Task detail API returned HTTP {status_code} for task {task_id}.",
+        )
+    except _requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    try:
+        return resp.json()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Task detail API returned invalid JSON for task {task_id}: {exc}",
+        )
+
+
+def _enrich_task_with_details(task, headers: dict[str, str]):
+    """Return a new TaskInfo with detail data applied atomically."""
+    task_detail_data = _fetch_task_detail(task.id, headers)
+    print(f"task detail data for task {task.id}: {task_detail_data}")
+    return convert_task_details(task, task_detail_data)
+
+
 @router.post("/init-task-list")
 def task_list(
     body: TaskListRequest,
@@ -429,8 +481,22 @@ def task_list(
     try:
         data = resp.json()
 
+        # Convert the raw API response to a list of TaskInfo objects using the data_conversion helper
         init_tasks = convert_task_list_response(data)
         print(f"initial task list {init_tasks}")
+
+        # Convert the raw API response to pagination info using the data_conversion helper
+        pagination_info = convert_pagination_response(data)
+        print(f"pagination info: {pagination_info}")
+
+        enriched_tasks = []
+        for task in init_tasks:
+            enriched_tasks.append(_enrich_task_with_details(task, headers))
+            # if task.id in TASK_DETAIL_ENRICH_IDS:
+            #     enriched_tasks.append(_enrich_task_with_details(task, headers))
+            # else:
+            #     enriched_tasks.append(task)
+        init_tasks = enriched_tasks
 
     except Exception:
         content_type = resp.headers.get("Content-Type", "")

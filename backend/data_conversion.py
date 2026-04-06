@@ -1,5 +1,5 @@
 # data conversion utilities for backend
-from backend.schemas.data import PaginationInfo, TaskInfo
+from backend.schemas.data import CompanyInfo, PaginationInfo, TaskInfo, URLInfo
 
 
 def convert_task_list_response(response: dict) -> list[TaskInfo]:
@@ -50,11 +50,121 @@ def convert_pagination_response(response: dict) -> PaginationInfo:
             "total_pages": 5
         }
     """
-    raw: dict = response.get("data", {}).get("data", {}).get("pagination", {})
+    raw: dict = response.get("data", {}).get("pagination", {})
 
     return PaginationInfo(
         total_items=raw.get("total", 0),
         current_page=raw.get("page", 1),
         page_step=raw.get("page_size", 10),
         total_pages=raw.get("total_pages", 1),
+    )
+
+
+def convert_task_details(task: TaskInfo, response: dict) -> TaskInfo:
+    """Convert task detail API response into a fully updated TaskInfo.
+
+    Expected detail structure:
+        {
+            "data": {
+                "id": 1969,
+                "companies": [
+                    {
+                        "notes": "...",
+                        "status": "...",
+                        "entity_name": "...",
+                        "completed_at": "...",
+                        "current_step": "...",
+                        "missing_reports": [],
+                        "orbit_entity_id": "...",
+                        "review_rejection_reason": "...",
+                        "shared_notes": "...",
+                        "name": "...",
+                        "source_pages": [
+                            {
+                                "id": 1,
+                                "page_url": "https://...",
+                                "page_type": "REPORT",
+                                "comment": "..."
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    """
+    payload: dict = response.get("data", {})
+    task_id = payload.get("id", task.id)
+    task_description = payload.get("task_description", task.task_description)
+
+    raw_companies: list[dict] = payload.get("companies", [])
+
+    companies: list[CompanyInfo] = []
+    for company in raw_companies:
+        websites = company.get("website") or []
+        website_pages = company.get("website_pages") or []
+        raw_pages: list[dict] = company.get("source_pages", [])
+        url_infos: list[URLInfo] = []
+
+        if isinstance(websites, str):
+            websites = [websites]
+        if isinstance(website_pages, str):
+            website_pages = [website_pages]
+
+        for website in websites:
+            url_infos.append(
+                URLInfo(
+                    id=None,
+                    url=website,
+                    type="WEBSITE",
+                    comment=None,
+                )
+            )
+
+        for website_page in website_pages:
+            url_infos.append(
+                URLInfo(
+                    id=None,
+                    url=website_page,
+                    type="WEBSITE_PAGES",
+                    comment=None,
+                )
+            )
+
+        for page in raw_pages:
+            page_url = page.get("page_url")
+            page_type = page.get("page_type")
+            if not page_url or not page_type:
+                continue
+
+            url_infos.append(
+                URLInfo(
+                    id=page.get("id"),
+                    url=page_url,
+                    type=page_type,
+                    comment=page.get("comment") or None,
+                )
+            )
+
+        companies.append(
+            CompanyInfo(
+                task_id=task_id,
+                notes=company.get("notes", ""),
+                status=company.get("status", ""),
+                entity_name=company.get("entity_name", ""),
+                completed_at=company.get("completed_at", ""),
+                current_step=company.get("current_step", ""),
+                missing_reports=company.get("missing_reports", []),
+                orbit_entity_id=company.get("orbit_entity_id", ""),
+                review_rejection_reason=company.get("review_rejection_reason") or "",
+                shared_notes=company.get("shared_notes", ""),
+                name=company.get("name", ""),
+                urlInfos=url_infos,
+            )
+        )
+
+    return task.model_copy(
+        update={
+            "task_description": task_description,
+            "companyInfos": companies,
+        }
     )

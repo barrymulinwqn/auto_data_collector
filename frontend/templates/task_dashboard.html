@@ -74,7 +74,7 @@
                     <div
                         class="task-desc"
                         data-tooltip="task_description: Full description and objectives for this task">
-                        {{ task.task_description }}
+                        {{ task.task_description | safe }}
                     </div>
                     {% endif %}
 
@@ -136,22 +136,22 @@
                                     class="detail-item"
                                     data-tooltip="notes: Internal notes specific to this company entry">
                                     <span class="detail-label">Notes</span>
-                                    <span class="detail-value">{{ company.notes or '—' }}</span>
+                                    <div class="detail-value">{{ (company.notes or '—') | safe }}</div>
                                 </div>
                                 <div
                                     class="detail-item"
                                     data-tooltip="shared_notes: Notes visible to all team members working on this task">
                                     <span class="detail-label">Shared Notes</span>
-                                    <span class="detail-value">{{ company.shared_notes or '—' }}</span>
+                                    <div class="detail-value">{{ (company.shared_notes or '—') | safe}}</div>
                                 </div>
                                 <div
                                     class="detail-item"
                                     data-tooltip="review_rejection_reason: Explanation provided when a reviewer rejected this company's submission">
                                     <span class="detail-label">Review Rejection Reason</span>
-                                    <span
+                                    <div
                                         class="detail-value {% if company.review_rejection_reason %}detail-value--warn{% endif %}">
-                                        {{ company.review_rejection_reason or '—' }}
-                                    </span>
+                                        {{ (company.review_rejection_reason or '—') | safe }}
+                                    </div>
                                 </div>
                             </div>
 

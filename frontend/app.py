@@ -342,6 +342,7 @@ def api_task_list_test():
             headers=headers,
             timeout=60,
         )
+        print(f"Task list and details API response: {resp.status_code} {resp.text}")
         # Relay the backend response as-is (including error details from FastAPI)
         return jsonify(resp.json()), resp.status_code
     except requests.exceptions.ConnectionError:
