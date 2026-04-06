@@ -514,6 +514,7 @@ def task_list(
         "success": resp.ok,
         "status_code": resp.status_code,
         "data": init_tasks,
+        "pagination": pagination_info,
     }
 
 

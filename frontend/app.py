@@ -65,13 +65,83 @@ def index():
         resp.raise_for_status()
         ini_task_list = resp.json()
         tasks = ini_task_list.get("data", [])
+        pagination_info = {"current_page": 1}
         print(f"Initial Task List retrieval successful: {tasks}")
 
     except requests.RequestException:
         tasks = []
+        pagination_info = {"current_page": 1}
         flash("Could not connect to backend API.", "danger")
     # return render_template("index.html", items=items)
-    return render_template("task_dashboard.html", tasks=tasks)
+    return render_template(
+        "task_dashboard.html", tasks=tasks, pagination=pagination_info
+    )
+
+
+@app.route("/next-task")
+def next_task():
+    next_page = request.args.get("next_page", 2, type=int)
+    try:
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(_api("/api/test/token"), timeout=60)
+        resp.raise_for_status()
+        tokens = resp.json()
+        print(f"Token retrieval successful: {tokens}")
+        jwt_token = tokens.get("jwt_token_value")
+        refresh_token = tokens.get("refresh_token_value")
+        print(f"JWT Token: {jwt_token}, Refresh Token: {refresh_token}")
+
+        # validate if jwt_token is expired or not
+        body = {
+            "refreshToken": refresh_token,
+        }
+        headers = {}
+        if jwt_token:
+            headers["Authorization"] = f"JWT {jwt_token}"
+            headers["Content-Type"] = "application/json"
+
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(
+            _api("/api/test/validate-token"),
+            json=body,
+            headers=headers,
+            timeout=60,
+        )
+        resp.raise_for_status()
+        new_tokens = resp.json()
+        print(f"Token validation successful: {new_tokens}")
+
+        new_jwt_token = new_tokens.get("data", {}).get("new_jwt_token")
+        new_refresh_token = new_tokens.get("data", {}).get("new_refresh_token")
+        print(f"New JWT Token: {new_jwt_token}, New Refresh Token: {new_refresh_token}")
+
+        # get task list data for the requested page
+        body = {"page": next_page, "page_size": 1, "view_type": "available"}
+        headers = {}
+        if new_jwt_token:
+            headers["Authorization"] = f"JWT {new_jwt_token}"
+            headers["Content-Type"] = "application/json"
+
+        # Generous timeout: Chrome may need to be launched (up to ~30 s cold start)
+        resp = requests.post(
+            _api("/api/test/init-task-list"),
+            json=body,
+            headers=headers,
+            timeout=60,
+        )
+        resp.raise_for_status()
+        ini_task_list = resp.json()
+        tasks = ini_task_list.get("data", [])
+        pagination_info = {"current_page": next_page}
+        print(f"Task list page {next_page} retrieval successful: {tasks}")
+
+    except requests.RequestException:
+        tasks = []
+        pagination_info = {"current_page": next_page}
+        flash("Could not connect to backend API.", "danger")
+    return render_template(
+        "task_dashboard.html", tasks=tasks, pagination=pagination_info
+    )
 
 
 @app.route("/tasks")
