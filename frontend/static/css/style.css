@@ -16,9 +16,50 @@ body {
   padding: 0.75rem 2rem;
   background: #2563eb;
   color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
 }
 
 .brand { font-size: 1.25rem; font-weight: 700; color: #fff; text-decoration: none; }
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.55);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  background: rgba(255,255,255,0.24);
+}
+
+@media (max-width: 700px) {
+  .navbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+  }
+
+  .navbar-actions {
+    width: 100%;
+  }
+
+  .nav-btn {
+    flex: 1;
+  }
+}
 
 /* ── Container ─────────────────────────────────────── */
 .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
@@ -148,6 +189,7 @@ tr:last-child td { border-bottom: none; }
 .task-header:hover { background: #eff4ff; }
 
 .task-title-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
+.task-id { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
 .task-name { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
 
 .task-meta-row { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; font-size: 0.85rem; color: #6b7280; margin-bottom: 0.5rem; }
@@ -204,6 +246,8 @@ tr:last-child td { border-bottom: none; }
 .company-header:hover { background: #f3f4f6; }
 
 .company-title-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.2rem; }
+.company-index  { font-weight: 600; font-size: 0.95rem; color: #1e293b; }
+.orbit-entity-id  { font-weight: 600; font-size: 0.95rem; color: #1e293b; }
 .company-name  { font-weight: 600; font-size: 0.95rem; color: #1e293b; }
 .company-entity { font-size: 0.8rem; color: #6b7280; }
 

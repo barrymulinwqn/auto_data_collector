@@ -11,6 +11,11 @@
             <div style="display: flex; align-items: center; gap: 1rem">
                 <span class="brand">Auto Data Collector</span>
             </div>
+            <div class="navbar-actions">
+                <button type="button" class="nav-btn" onclick="getNextTaskAndDetails()">Next Task and Details</button>
+                <button type="button" class="nav-btn" onclick="collapseAllTasks()">Collapse All Tasks</button>
+                <button type="button" class="nav-btn" onclick="expandAllTasks()">Expand All Tasks</button>
+            </div>
         </nav>
 
         <main class="dash-container">
@@ -24,6 +29,12 @@
             <div class="task-card">
                 {# ── Task header ────────────────────────────────── #}
                 <div class="task-header" onclick="toggleSection('task-body-{{ task.id }}', this)">
+                    <div class="task-title-row">
+                        <span class="task-id" data-tooltip="task_id: Unique identifier for this task">
+                            Task_Id: {{ task.id }}
+                        </span>
+                    </div>
+                    <br />
                     <div class="task-title-row">
                         <span class="task-name" data-tooltip="task_name: The display name of this task">
                             {{ task.task_name }}
@@ -88,6 +99,16 @@
                         <div
                             class="company-header"
                             onclick="toggleSection('company-body-{{ task.id }}-{{ loop.index }}', this)">
+                            <div class="company-title-row">
+                                <span class="company-index" data-tooltip="company index">Index: {{ loop.index }}</span>
+                                <span
+                                    class="orbit-entity-id"
+                                    data-tooltip="orbit_entity_id: Unique identifier for this entity">
+                                    Entity_Id: {{ company.orbit_entity_id }}
+                                </span>
+                            </div>
+                            <br />
+
                             <div class="company-title-row">
                                 <span class="company-name" data-tooltip="name: Short display name for this company">
                                     {{ company.name }}
@@ -239,9 +260,41 @@
         <script>
             function toggleSection(id, headerEl) {
                 const body = document.getElementById(id);
+                if (!body) return;
                 const icon = headerEl.querySelector(".toggle-icon");
                 const isOpen = body.classList.toggle("open");
                 if (icon) icon.textContent = isOpen ? "▲" : "▼";
+            }
+
+            function setAllTaskSections(isOpen) {
+                const taskCards = document.querySelectorAll(".task-card");
+                taskCards.forEach((card) => {
+                    const taskBody = card.querySelector(".task-body");
+                    const taskHeader = card.querySelector(".task-header");
+                    if (!taskBody || !taskHeader) return;
+
+                    taskBody.classList.toggle("open", isOpen);
+                    const taskIcon = taskHeader.querySelector(".toggle-icon");
+                    if (taskIcon) taskIcon.textContent = isOpen ? "▲" : "▼";
+
+                    card.querySelectorAll(".company-card").forEach((companyCard) => {
+                        const companyBody = companyCard.querySelector(".company-body");
+                        const companyHeader = companyCard.querySelector(".company-header");
+                        if (!companyBody || !companyHeader) return;
+
+                        companyBody.classList.toggle("open", isOpen);
+                        const companyIcon = companyHeader.querySelector(".toggle-icon");
+                        if (companyIcon) companyIcon.textContent = isOpen ? "▲" : "▼";
+                    });
+                });
+            }
+
+            function collapseAllTasks() {
+                setAllTaskSections(false);
+            }
+
+            function expandAllTasks() {
+                setAllTaskSections(true);
             }
 
             // ── Body-level tooltip (never clipped by overflow:hidden) ──────

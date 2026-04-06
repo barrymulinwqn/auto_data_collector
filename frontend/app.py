@@ -49,7 +49,7 @@ def index():
         print(f"New JWT Token: {new_jwt_token}, New Refresh Token: {new_refresh_token}")
 
         # get task list data
-        body = {"page": 1, "page_size": 10, "view_type": "available"}
+        body = {"page": 1, "page_size": 1, "view_type": "available"}
         headers = {}
         if new_jwt_token:
             headers["Authorization"] = f"JWT {new_jwt_token}"
@@ -449,6 +449,62 @@ def api_abandon_task_test():
             ),
             504,
         )
+    except requests.RequestException as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/next-task", methods=["POST"])
+def api_next_task():
+    """Fetch the next task (paginated, page_size=1) and return enriched TaskInfo JSON.
+
+    Request body (JSON): { "page": <int> }
+    Proxies to FastAPI /api/test/init-task-list which enriches task details.
+    """
+    body = request.get_json(silent=True) or {}
+    page = int(body.get("page", 2))
+    auth_header = request.headers.get("Authorization", "")
+
+    try:
+        # Step 1: get + validate a fresh token via the existing proxy
+        token_resp = requests.post(_api("/api/test/token"), timeout=60)
+        token_resp.raise_for_status()
+        tokens = token_resp.json()
+        jwt_token = tokens.get("jwt_token_value", "")
+        refresh_token = tokens.get("refresh_token_value", "")
+
+        # Step 2: validate / refresh the token
+        val_headers = {"Content-Type": "application/json"}
+        if jwt_token:
+            val_headers["Authorization"] = f"JWT {jwt_token}"
+        val_resp = requests.post(
+            _api("/api/test/validate-token"),
+            json={"refreshToken": refresh_token},
+            headers=val_headers,
+            timeout=60,
+        )
+        val_resp.raise_for_status()
+        new_tokens = val_resp.json()
+        new_jwt = new_tokens.get("data", {}).get("new_jwt_token") or jwt_token
+
+        # Step 3: fetch the requested page of tasks (1 per page)
+        task_headers = {
+            "Authorization": f"JWT {new_jwt}",
+            "Content-Type": "application/json",
+        }
+        task_resp = requests.post(
+            _api("/api/test/init-task-list"),
+            json={"page": page, "page_size": 1, "view_type": "available"},
+            headers=task_headers,
+            timeout=120,
+        )
+        task_resp.raise_for_status()
+        result = task_resp.json()
+        return jsonify({"success": True, "data": result.get("data", [])}), 200
+
+    except requests.exceptions.ConnectionError:
+        return jsonify({"success": False, "error": "Cannot connect to backend."}), 502
+    except requests.exceptions.Timeout:
+        return jsonify({"success": False, "error": "Backend request timed out."}), 504
     except requests.RequestException as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
